@@ -1,0 +1,13 @@
+{% extends "page/checkout/thankyou.html.twig" %}
+
+{% set sModuleId = '@' ~ constant('\\Unzer\\UnzerPayment\\Constants\\Constants::MODULE_ID') %}
+
+{% block checkout_thankyou_info %}
+
+    {% if needsUnzerPaymentInfo is defined %}
+        {{ unzerPaymentInfo|raw }}
+    {% endif %}
+
+    {{ parent() }}
+
+{% endblock %}

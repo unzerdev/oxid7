@@ -1,0 +1,47 @@
+<script type="module" src="https://static-v2.unzer.com/v2/ui-components/index.js"></script>
+
+<div id="unzer-container"></div>
+
+<script>
+
+    var unzerRedirectUrl = '{{ unzerRedirectUrl|raw }}';
+    var unzerErrorRedirectUrl = '{{ unzerErrorRedirectUrl|raw }}';
+    var unzerClickToPay = '{{ unzerClickToPay|raw }}';
+
+    Promise.all([
+        customElements.whenDefined("unzer-payment"),
+        customElements.whenDefined("unzer-pay-page"),
+    ]).then(() => {
+        const btnCheckout = document.getElementById("unzer-checkout-btn");
+        btnCheckout.addEventListener("click", showCheckout);
+    });
+
+    function showCheckout() {
+        const unzerContainer = document.getElementById("unzer-container");
+        unzerContainer.innerHTML = `
+            <unzer-payment publicKey="{{ unzerPubKey }}" locale="{{ unzerLocale }}">
+                <unzer-pay-page
+                    id="checkout"
+                    payPageId="{{ unzerPaypageToken }}"
+                    {{ unzerClickToPay|raw }}
+                ></unzer-pay-page>
+            </unzer-payment>
+        `;
+
+        const checkout = document.getElementById("checkout");
+
+        checkout.abort(function () {
+            return;
+        });
+
+        checkout.success(function (data) {
+            window.location.href = unzerRedirectUrl;
+        });
+
+        checkout.error(function (error) {
+            window.location.href = unzerErrorRedirectUrl;
+        });
+
+        checkout.open();
+    }
+</script>

@@ -1,0 +1,20 @@
+{% extends 'page/checkout/order.html.twig' %}
+{% set sModuleId = '@' ~ constant('\\Unzer\\UnzerPayment\\Constants\\Constants::MODULE_ID') %}
+
+{% block checkout_order_next_step_side %}
+
+    {% set payment = oView.getPayment() %}
+
+    {% if payment.isUnzerPaymentMethod() %}
+        {% include sModuleId ~ '/payment/unzer_assets.html.twig' %}
+
+        <button type="button" class="btn btn-highlight btn-lg w-100" id="unzer-checkout-btn">
+            {{ translate({ ident: "SUBMIT_ORDER" }) }}
+        </button>
+
+    {%  else %}
+        {{ parent() }}
+    {% endif %}
+
+{% endblock %}
+

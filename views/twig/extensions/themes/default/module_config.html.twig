@@ -1,0 +1,99 @@
+{% extends "module_config.html.twig" %}
+
+{% block admin_module_config_form %}
+
+    {% if oView.isUnzerPaymentModuleConfig() %}
+
+        <style>
+            .messagebox_warning {
+                border-color: red;
+                background: #fdd;
+                color: red;
+            }
+        </style>
+
+        {% if unzer_success_message is defined %}
+            <p class="messagebox">
+                {{ unzer_success_message }}
+            </p>
+        {% endif %}
+
+        {% if unzer_config_error is defined %}
+            <p class="messagebox messagebox_warning">
+                {{ unzer_config_error }}
+            </p>
+        {% endif %}
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const messageboxes = document.querySelectorAll(".messagebox");
+
+                if (messageboxes.length > 0) {
+                    setTimeout(() => {
+                        messageboxes.forEach((box) => {
+                            box.style.transition = "opacity 0.5s ease";
+                            box.style.opacity = "0";
+                            setTimeout(() => {
+                                box.style.display = "none";
+                            }, 500);
+                        });
+                    }, 5000);
+                }
+            });
+        </script>
+
+    {% endif %}
+
+    {{ parent() }}
+
+    {% if oView.isUnzerPaymentModuleConfig() %}
+
+        {% if unzer_webhooks is defined %}
+
+            <h4>{{ translate({ ident: "UNZER_WEBHOOKS" }) }}</h4>
+
+            <div id="webhooksListing">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>{{ translate({ ident: "UNZER_ID" }) }}</th>
+                        <th>{{ translate({ ident: "UNZER_WEBHOOK_EVENT" }) }}</th>
+                        <th>{{ translate({ ident: "UNZER_WEBHOOK_URL" }) }}</th>
+                        <th>&nbsp;</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        {% for webhook in unzer_webhooks %}
+                            {% set counter = ( counter | default(0) ) + 1 %}
+                            {% set zebra = cycle(["listitem", "listitem2"], counter) %}
+                            <tr>
+                                <td class="{{ zebra }}">
+                                    {{ webhook.getId() }}
+                                </td>
+                                <td class="{{ zebra }}">
+                                    {{ webhook.getEvent() }}
+                                </td>
+                                <td class="{{ zebra }}">
+                                    {{ webhook.getUrl() }}
+                                </td>
+                                <td class="{{ zebra }}">
+                                    <a href="{{ oViewConf.getSelfLink()|raw }}&oxid={{ oModule.getInfo('id') }}&editval[oxshops__oxid]={{ oxid }}&cl=module_config&fnc=deletewebhook&webhookId={{ webhook.getId() }}" onclick="return confirm('{{ translate({ ident: "UNZER_WEBHOOK_DELETE_CONFIRM" }) }}')" class="delete">
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <p>
+                    <a href="{{ oViewConf.getSelfLink()|raw }}&oxid={{ oModule.getInfo('id') }}&editval[oxshops__oxid]={{ oxid }}&cl=module_config&fnc=createwebhook" class="btn btn-primary" onclick="return confirm('{{ translate({ ident: "UNZER_WEBHOOK_CREATE_CONFIRM" }) }}')">
+                        {{ translate({ ident: "UNZER_CREATE_WEBHOOK" }) }}
+                    </a>
+                </p>
+
+            </div>
+
+        {% endif %}
+
+    {% endif %}
+{% endblock %}

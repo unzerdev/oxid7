@@ -1,0 +1,40 @@
+{
+  "name": "unzerdev/oxid7",
+  "description": "Official Unzer Payment Extension for OXID 7",
+  "type": "oxideshop-module",
+  "keywords": [
+    "oxid",
+    "modules",
+    "eShop",
+    "payment"
+  ],
+  "homepage": "https://www.unzer.com/",
+  "authors": [
+    {
+      "name": "Unzer GmbH",
+      "email": "info@unzer.com",
+      "homepage": "https://www.unzer.com"
+    }
+  ],
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "extra": {
+    "oxideshop": {
+      "target-directory": "unzer/unzer_payment"
+    }
+  },
+  "require": {
+    "php": ">=7.4 || <=8.3",
+    "lib-curl": ">=7.26.0",
+    "lib-openssl": ">=1.0.1",
+    "ext-curl": "*",
+    "ext-openssl": "*",
+    "webmozart/path-util": "^2.3.0",
+    "unzerdev/php-sdk": "~3.12.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Unzer\\UnzerPayment\\": "./src/"
+    }
+  }
+}

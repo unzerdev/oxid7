@@ -1,0 +1,8 @@
+{% extends "email/html/order_cust.html.twig" %}
+
+{% block email_html_order_cust_paymentinfo %}
+    {% if payment.oxuserpayments__oxpaymentsid.value == "up_paylater_invoice" or payment.oxuserpayments__oxpaymentsid.value == "up_prepayment" %}
+        {{ oViewConf.getUnzerSessionPaymentInfo()|raw }}
+    {% endif %}
+    {{ parent() }}
+{% endblock %}

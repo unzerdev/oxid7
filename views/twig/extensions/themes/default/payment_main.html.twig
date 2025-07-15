@@ -1,0 +1,20 @@
+{% extends "payment_main.html.twig" %}
+
+{% block admin_payment_main_form %}
+
+    {% if oxid starts with 'up_' %}
+        <tr>
+            <td colspan="2">
+                <p>
+                    <strong>
+                        Unzer Payment
+                    </strong>
+                </p>
+            </td>
+        </tr>
+
+    {% endif %}
+
+    {{ parent() }}
+
+{% endblock %}
