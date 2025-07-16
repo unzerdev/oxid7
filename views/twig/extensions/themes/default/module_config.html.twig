@@ -10,6 +10,9 @@
                 background: #fdd;
                 color: red;
             }
+            a.saveButton {
+                text-decoration: none;
+            }
         </style>
 
         {% if unzer_success_message is defined %}
@@ -86,7 +89,7 @@
                 </table>
 
                 <p>
-                    <a href="{{ oViewConf.getSelfLink()|raw }}&oxid={{ oModule.getInfo('id') }}&editval[oxshops__oxid]={{ oxid }}&cl=module_config&fnc=createwebhook" class="btn btn-primary" onclick="return confirm('{{ translate({ ident: "UNZER_WEBHOOK_CREATE_CONFIRM" }) }}')">
+                    <a href="{{ oViewConf.getSelfLink()|raw }}&oxid={{ oModule.getInfo('id') }}&editval[oxshops__oxid]={{ oxid }}&cl=module_config&fnc=createwebhook" class="saveButton" onclick="return confirm('{{ translate({ ident: "UNZER_WEBHOOK_CREATE_CONFIRM" }) }}')">
                         {{ translate({ ident: "UNZER_CREATE_WEBHOOK" }) }}
                     </a>
                 </p>
