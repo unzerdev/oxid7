@@ -4,6 +4,13 @@
 
 {% block checkout_thankyou_info %}
 
+    {% if unzerPaymentId is defined %}
+        <p style="font-style: italic">
+            Unzer Payment-ID: {{ unzerPaymentId }}<br>
+            Unzer Short-ID: {{ unzerShortId }}
+        </p>
+    {% endif %}
+
     {% if needsUnzerPaymentInfo is defined %}
         {{ unzerPaymentInfo|raw }}
     {% endif %}

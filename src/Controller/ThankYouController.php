@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Unzer\UnzerPayment\Controller;
 
 use OxidEsales\Eshop\Core\Registry;
+use OxidEsales\EshopCommunity\Core\Di\ContainerFacade;
+use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServiceInterface;
 use Unzer\UnzerPayment\Classes\UnzerpaymentClient;
 use Unzer\UnzerPayment\Classes\UnzerpaymentHelper;
+use Unzer\UnzerPayment\Constants\Constants;
 use Unzer\UnzerPayment\Service\DebugHandler;
 use Unzer\UnzerPayment\Traits\ServiceContainer;
 
@@ -106,6 +109,11 @@ class ThankYouController extends ThankYouController_parent
             if ($paymentId == 'ppy' || $paymentId == 'piv' || $paymentId == 'ivc') {
                 $this->addTplParam('needsUnzerPaymentInfo', true);
                 $this->addTplParam('unzerPaymentInfo', Registry::getSession()->getVariable('additionalUnzerPaymentInformation') ?? '');
+            }
+            $moduleSettingService = ContainerFacade::get(ModuleSettingServiceInterface::class);
+            if ($moduleSettingService->getString('UnzerPaymentMode', Constants::MODULE_ID) == '0') {
+                $this->addTplParam('unzerPaymentId', $payment->getId());
+                $this->addTplParam('unzerShortId', $payment->getInitialTransaction()->getShortId());
             }
         }
 

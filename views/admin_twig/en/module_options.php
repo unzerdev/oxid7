@@ -31,6 +31,7 @@ $aLang = [
     'SHOP_MODULE_UnzerPaymentPaypalChargeMode_charge' => 'charge',
     'UNZER_WEBHOOKS' => 'Webhooks',
     'UNZER_ID' => 'ID',
+    'UNZER_SHORT_ID' => 'Short-ID',
     'UNZER_WEBHOOK_EVENT' => 'Event',
     'UNZER_WEBHOOK_URL' => 'URL',
     'UNZER_WEBHOOK_DELETE_CONFIRM' => 'Do you really want to delete this webhook?',

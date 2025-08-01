@@ -23,8 +23,11 @@
       "target-directory": "unzer/unzer_payment"
     }
   },
+  "conflicts": {
+    "oxid-esales/oxideshop-ce": "<7.1"
+  },
   "require": {
-    "php": ">=7.4 || <=8.3",
+    "php": ">=8.0 || <=8.4",
     "lib-curl": ">=7.26.0",
     "lib-openssl": ">=1.0.1",
     "ext-curl": "*",

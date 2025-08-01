@@ -87,17 +87,17 @@ class Events
             self::insertRowIfNotExists('oxpayments', ['OXID' => $sPaymentOxid], "INSERT INTO oxpayments (OXID, OXACTIVE, OXDESC, OXADDSUM, OXADDSUMTYPE, OXFROMBONI, OXFROMAMOUNT, OXTOAMOUNT, OXVALDESC, OXCHECKED, OXDESC_1, OXVALDESC_1, OXDESC_2, OXVALDESC_2, OXDESC_3, OXVALDESC_3, OXLONGDESC, OXLONGDESC_1, OXLONGDESC_2, OXLONGDESC_3, OXSORT) VALUES ('{$sPaymentOxid}', 0, '{$sPaymentName}', 0, 'abs', 0, 0, 999999, '', 1, '{$sPaymentName_1}', '', '', '', '', '', '', '', '', '', 0)");
             self::insertRowIfNotExists('oxobject2payment', ['OXPAYMENTID' => $sPaymentOxid, 'OXTYPE' => 'oxdelset'], "INSERT INTO oxobject2payment(OXID,OXPAYMENTID,OXOBJECTID,OXTYPE) values (MD5(CONCAT(NOW(),RAND())), '{$sPaymentOxid}', 'oxidstandard', 'oxdelset');");
 
-            // INSERT COUNTRY RESTRICTIONS
-            $paymentMethodClassName = '\Unzer\UnzerPayment\PaymentMethods\\' . $sPaymentDataArray['class_name'];
-            $paymentObject = new $paymentMethodClassName();
-            if (sizeof($paymentObject->getAllowedCountries()) > 0) {
-                foreach ($paymentObject->getAllowedCountries() as $countryIsoCode) {
-                    /** @var Country::class $oCountry */
-                    $oCountry = oxNew(Country::class);
-                    $oCountryId = $oCountry->getIdByCode($countryIsoCode);
-                    self::insertRowIfNotExists('oxobject2payment', ['OXPAYMENTID' => $sPaymentOxid, 'OXOBJECTID' => $oCountryId, 'OXTYPE' => 'oxcountry'], "INSERT INTO oxobject2payment(OXID,OXPAYMENTID,OXOBJECTID,OXTYPE) values (MD5(CONCAT(NOW(),RAND())), '{$sPaymentOxid}', '{$oCountryId}', 'oxcountry');");
-                }
-            }
+            // INSERT COUNTRY RESTRICTIONS (removed as OXID checks for delivery country, but actually billing country is the needed one for checks)
+            #$paymentMethodClassName = '\Unzer\UnzerPayment\PaymentMethods\\' . $sPaymentDataArray['class_name'];
+            #$paymentObject = new $paymentMethodClassName();
+            #if (sizeof($paymentObject->getAllowedCountries()) > 0) {
+            #    foreach ($paymentObject->getAllowedCountries() as $countryIsoCode) {
+            #        /** @var Country::class $oCountry */
+            #        $oCountry = oxNew(Country::class);
+            #        $oCountryId = $oCountry->getIdByCode($countryIsoCode);
+            #        self::insertRowIfNotExists('oxobject2payment', ['OXPAYMENTID' => $sPaymentOxid, 'OXOBJECTID' => $oCountryId, 'OXTYPE' => 'oxcountry'], "INSERT INTO oxobject2payment(OXID,OXPAYMENTID,OXOBJECTID,OXTYPE) values (MD5(CONCAT(NOW(),RAND())), '{$sPaymentOxid}', '{$oCountryId}', 'oxcountry');");
+            #    }
+            #}
         }
     }
 
