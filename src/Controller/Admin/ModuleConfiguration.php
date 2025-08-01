@@ -27,6 +27,11 @@ class ModuleConfiguration extends ModuleConfiguration_parent
     {
         if (UnzerpaymentClient::getInstance()) {
             $this->addTplParam('unzer_webhooks', UnzerpaymentClient::getInstance()->getWebhooksList());
+            foreach (UnzerpaymentClient::getAvailablePaymentMethods() as $paymentMethod) {
+                if ($paymentMethod->type == 'clicktopay') {
+                    $this->addTplParam('unzer_has_clicktopay', true);
+                }
+            }
         }
         return parent::render();
     }

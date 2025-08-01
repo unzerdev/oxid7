@@ -401,6 +401,7 @@ class UnzerpaymentHelper
                 $status           = $transaction->isSuccess() ? 'success' : 'error';
                 $status           = $transaction->isPending() ? 'pending' : $status;
                 $return['status'] = $status;
+                $return['shortID'] = $transaction->getShortId();
 
                 return $return;
             },

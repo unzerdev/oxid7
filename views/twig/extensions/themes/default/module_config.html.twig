@@ -42,6 +42,17 @@
                         });
                     }, 5000);
                 }
+
+                {% if unzer_has_clicktopay is not defined %}
+                    const ctp_input = document.querySelector('input[name="confbools[UnzerPaymentClickToPay]"]');
+                    if (ctp_input) {
+                        const dl = ctp_input.closest('dl');
+                        if (dl) {
+                            dl.style.display = 'none';
+                        }
+                    }
+                {% endif %}
+
             });
         </script>
 
