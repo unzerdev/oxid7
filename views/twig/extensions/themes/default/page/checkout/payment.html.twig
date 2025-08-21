@@ -1,0 +1,28 @@
+{% extends "page/checkout/payment.html.twig" %}
+
+{% block select_payment %}
+
+    {% if oView.isUnzerPaymentMethod(sPaymentID) %}
+        <div class="payment-option" style="margin-bottom: 3px;">
+            <div class="payment-option-form">
+                <input class="form-check-input" id="payment_{{ sPaymentID }}" type="radio" name="paymentid" value="{{ sPaymentID }}" {% if oView.getCheckedPaymentId() == paymentmethod.oxpayments__oxid.value %}checked{% endif %}>
+                <label class="form-check-label" for="payment_{{ sPaymentID }}">
+                    <img src="{{ paymentmethod.getIcon() }}" style="max-width: 40px; height: auto; vertical-align: middle">
+                    {{ paymentmethod.oxpayments__oxdesc.value }}
+                </label>
+            </div>
+            <div class="payment-option-info{% if oView.getCheckedPaymentId() == paymentmethod.oxpayments__oxid.value %} activePayment{% endif %}">
+                {% block checkout_payment_longdesc %}
+                    {% if paymentmethod.oxpayments__oxlongdesc.value|striptags|trim %}
+                        <div class="desc">
+                            {{ paymentmethod.oxpayments__oxlongdesc.getRawValue() }}
+                        </div>
+                    {% endif %}
+                {% endblock %}
+            </div>
+        </div>
+    {% else %}
+        {{ parent() }}
+    {% endif %}
+
+{% endblock %}
