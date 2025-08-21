@@ -413,11 +413,20 @@ class UnzerpaymentHelper
                 return strcmp( $a['time'], $b['time'] );
             }
         );
+
+        $paymentBaseMethod = \UnzerSDK\Services\IdService::getResourceTypeFromIdString($payment->getPaymentType()->getId());
+        $canCancel = $payment->getAmount()->getCanceled() != $payment->getAmount()->getTotal() && $payment->getAmount()->getRemaining() > 0;
+        if (in_array($paymentBaseMethod, ['pdd', 'piv', 'pit'])) {
+            if ($payment->getAmount()->getCharged() > 0) {
+                $canCancel = false;
+            }
+        }
+
         $data = array(
             'id'                => $payment->getId(),
             'paymentMethod'     => $order->payment,
             'cartID'            => $order->id_cart,
-            'paymentBaseMethod' => \UnzerSDK\Services\IdService::getResourceTypeFromIdString($payment->getPaymentType()->getId()),
+            'paymentBaseMethod' => $paymentBaseMethod,
             'shortID'           => $payment->getInitialTransaction()->getShortId(),
             'currency'          => $payment->getAmount()->getCurrency(),
             'amount'            => self::displayPrice( $payment->getAmount()->getTotal(), $payment->getAmount()->getCurrency() ),
@@ -428,7 +437,7 @@ class UnzerpaymentHelper
             'cancelledPlain'    => $payment->getAmount()->getCanceled(),
             'remaining'         => self::displayPrice( $payment->getAmount()->getRemaining(), $payment->getAmount()->getCurrency() ),
             'remainingPlain'    => $payment->getAmount()->getRemaining(),
-            'canCancel'         => $payment->getAmount()->getCanceled() != $payment->getAmount()->getTotal() && $payment->getAmount()->getRemaining() > 0,
+            'canCancel'         => $canCancel,
             'transactions'      => $transactions,
             'status'            => $payment->getStateName(),
             'raw'               => print_r( $payment, true ),

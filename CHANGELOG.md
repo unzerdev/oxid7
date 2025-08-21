@@ -1,5 +1,11 @@
 # Release Notes for Unzer Payment Plugin for OXID eShop 7
 
+## [1.0.2]
+
+- Compatibility OXID 7.3.0 / PHP8.4
+- Update Unzer PHP-SDK
+- Cancel-logic update for UPL methods
+
 ## [1.0.1]
 - Payment-ID and Short-ID output on "thank you"-page in sandbox mode
 - Enhanced backend transaction view
