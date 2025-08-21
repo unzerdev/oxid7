@@ -12,13 +12,11 @@
                 </label>
             </div>
             <div class="payment-option-info{% if oView.getCheckedPaymentId() == paymentmethod.oxpayments__oxid.value %} activePayment{% endif %}">
-                {% block checkout_payment_longdesc %}
-                    {% if paymentmethod.oxpayments__oxlongdesc.value|striptags|trim %}
-                        <div class="desc">
-                            {{ paymentmethod.oxpayments__oxlongdesc.getRawValue() }}
-                        </div>
-                    {% endif %}
-                {% endblock %}
+                {% if paymentmethod.oxpayments__oxlongdesc.value|striptags|trim %}
+                    <div class="desc">
+                        {{ paymentmethod.oxpayments__oxlongdesc.getRawValue() }}
+                    </div>
+                {% endif %}
             </div>
         </div>
     {% else %}
