@@ -16,7 +16,7 @@ $aModule = [
     ],
     'thumbnail' => 'admin/unzer_payment.png',
     'lang' => 'en',
-    'version' => '1.0.2',
+    'version' => '1.0.0',
     'author' => 'Unzer GmbH',
     'email' => 'info@unzer.com',
     'url' => 'https://www.unzer.com/',
