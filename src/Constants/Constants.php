@@ -172,6 +172,14 @@ class Constants
             'name' => 'Unzer TWINT',
             'class_name' => 'UnzerTwintPaymentMethod',
         ],
+        'wero' => [
+            'status' => 1,
+            'short_code' => 'wro',
+            'long_code' => 'wero',
+            'payment_method_code' => 'UNZER_WERO',
+            'name' => 'Unzer Wero',
+            'class_name' => 'UnzerWeroPaymentMethod',
+        ],
         'wechatpay' => [
             'status' => 1,
             'short_code' => 'wcp',

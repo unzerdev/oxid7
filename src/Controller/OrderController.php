@@ -12,6 +12,8 @@ use OxidEsales\Facts\Facts;
 use Unzer\UnzerPayment\Classes\UnzerpaymentClient;
 use Unzer\UnzerPayment\Classes\UnzerpaymentHelper;
 use Unzer\UnzerPayment\Constants\Constants;
+use UnzerSDK\Constants\CompanyCommercialSectorItems;
+use UnzerSDK\Constants\CompanyRegistrationTypes;
 use UnzerSDK\Constants\PaypageCheckoutTypes;
 use OxidEsales\Eshop\Application\Model\Order;
 use OxidEsales\Eshop\Application\Model\Country;
@@ -119,6 +121,8 @@ class OrderController extends OrderController_parent
         $country = oxNew(Country::class);
         $country->load($oUser->oxuser__oxcountryid->value);
 
+        $deliveryCompanyName = '';
+
         $unzerAddressBilling = (new \UnzerSDK\Resources\EmbeddedResources\Address())
             ->setName($oUser->oxuser__oxfname->value . ' ' . $oUser->oxuser__oxlname->value)
             ->setStreet($oUser->oxuser__oxstreet->value . ' ' . $oUser->oxuser__oxstreetnr->value)
@@ -143,6 +147,8 @@ class OrderController extends OrderController_parent
                 ->setZip($oDeliveryAddress->oxaddress__oxzip->value)
                 ->setCity($oDeliveryAddress->oxaddress__oxcity->value)
                 ->setCountry($oDeliveryCountry->oxcountry__oxisoalpha2->value);
+
+            $deliveryCompanyName = $oDeliveryCountry->oxaddress__oxcompany->value;
 
             $unzerAddressDelivery->setShippingType(
                 \UnzerSDK\Constants\ShippingTypes::DIFFERENT_ADDRESS
@@ -169,6 +175,21 @@ class OrderController extends OrderController_parent
             ->setPhone($oUser->oxuser__oxfon->value)
             ->setBillingAddress($unzerAddressBilling)
             ->setShippingAddress($unzerAddressDelivery);
+            
+        if ($oUser->oxuser__oxcompany->value != '' || $deliveryCompanyName != '') {
+            $unzerCompanyInfo = new \UnzerSDK\Resources\EmbeddedResources\CompanyInfo();
+            $unzerCompanyInfo->setCompanyType('Company Type');
+            $unzerCompanyInfo->setRegistrationType(CompanyRegistrationTypes::REGISTRATION_TYPE_NOT_REGISTERED);
+            $unzerCompanyInfo->setFunction('OWNER');
+            $unzerCompanyInfo->setCommercialSector(CompanyCommercialSectorItems::OTHER);
+            $unzerCustomer->setCompanyInfo(
+                $unzerCompanyInfo
+            );
+        } else {
+            $unzerCustomer->setCompanyInfo(
+                null
+            );
+        }            
 
         $birthdate = '0000-00-00';
         if ($oUser->oxuser__oxbirthdate && is_array($oUser->oxuser__oxbirthdate->value)) {
@@ -287,7 +308,7 @@ class OrderController extends OrderController_parent
         $metadata = new \UnzerSDK\Resources\Metadata();
         $metadata->setShopType('Oxid eShop ' . (new Facts())->getEdition());
         $metadata->setShopVersion(ShopVersion::getVersion());
-        $metadata->addMetadata('pluginType', 'unzerdev/oxid7-payment');
+        $metadata->addMetadata('pluginType', 'unzerdev/oxid7');
         $metadata->addMetadata('pluginVersion', $oModule->getInfo('version'));
 
         UnzerpaymentClient::getInstance()->createMetadata($metadata);
@@ -368,11 +389,14 @@ class OrderController extends OrderController_parent
         $paypage->setResources($resources);
         $paypage->setType("embedded");
         $paypage->setCheckoutType(PaypageCheckoutTypes::PAYMENT_ONLY);
-        $paypage->setMode(
-            UnzerpaymentHelper::getInstance()->getPaymentMethodChargeMode($selectedPaymentMethod) == 'authorize' ||
-            $moduleSettingService->getString('UnzerPaymentMode', Constants::MODULE_ID) == '0' ?
-                'authorize' : 'charge'
-        );
+        $paypage->setOrderId($orderId);
+
+        $paypageMode = UnzerpaymentHelper::getInstance()->getPaymentMethodChargeMode($selectedPaymentMethod);
+        if ($paypageMode == '') {
+            $paypageMode = $moduleSettingService->getString('UnzerPaymentMode', Constants::MODULE_ID) == '0' ?
+                'authorize' : 'charge';
+        }
+        $paypage->setMode((string)$paypageMode);
 
         $redirectUrl = UnzerpaymentHelper::getInstance()->getRedirectUrl($this->getDeliveryAddressMD5());
 

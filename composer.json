@@ -16,7 +16,7 @@
       "homepage": "https://www.unzer.com"
     }
   ],
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "Apache-2.0",
   "extra": {
     "oxideshop": {
@@ -33,7 +33,7 @@
     "ext-curl": "*",
     "ext-openssl": "*",
     "webmozart/path-util": "^2.3.0",
-    "unzerdev/php-sdk": "~3.13.0"
+    "unzerdev/php-sdk": "~3.13.2"
   },
   "autoload": {
     "psr-4": {
