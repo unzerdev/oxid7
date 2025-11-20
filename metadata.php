@@ -16,7 +16,7 @@ $aModule = [
     ],
     'thumbnail' => 'admin/unzer_payment.png',
     'lang' => 'en',
-    'version' => '1.0.1',
+    'version' => '1.1.0',
     'author' => 'Unzer GmbH',
     'email' => 'info@unzer.com',
     'url' => 'https://www.unzer.com/',
@@ -88,6 +88,13 @@ $aModule = [
         [
             'group' => 'unzer_payment_specific',
             'name' => 'UnzerPaymentPaypalChargeMode',
+            'type' => 'select',
+            'value' => 'authorize|charge',
+            'constraints' => 'authorize|charge',
+        ],
+        [
+            'group' => 'unzer_payment_specific',
+            'name' => 'UnzerPaymentWeroChargeMode',
             'type' => 'select',
             'value' => 'authorize|charge',
             'constraints' => 'authorize|charge',

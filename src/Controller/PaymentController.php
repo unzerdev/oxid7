@@ -78,7 +78,15 @@ class PaymentController extends PaymentController_parent
                         }
                     }
                 }
-                if ($currencyOK && $countryOK) {
+
+                $customerOK = true;
+                if ($oUser->oxuser__oxcompany->value != '') {
+                    if ($paymentModel::UNZER_SHORT_CODE == 'pdd' || $paymentModel::UNZER_SHORT_CODE == 'pit' || $paymentModel::UNZER_SHORT_CODE == 'wro') {
+                        $customerOK = false;
+                    }
+                }
+                
+                if ($currencyOK && $countryOK && $customerOK) {
                     $paymentList[$key] = $payment;
                 }
             }

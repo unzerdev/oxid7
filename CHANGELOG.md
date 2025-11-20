@@ -1,5 +1,12 @@
 # Release Notes for Unzer Payment Plugin for OXID eShop 7
 
+## [1.1.0]
+
+- Added Wero payment method
+- Updated payment logos to new design
+- Fixed display incorrect payment state on orders
+- Fixed a lot of “behind the scenes” issues to improve functionality
+
 ## [1.0.2]
 
 - Compatibility OXID 7.3.0 / PHP8.4
@@ -61,5 +68,6 @@ We hope you enjoy the enhancements brought by the new Unzer Payment plugin!
 - TWINT
 - Unzer Installment
 - Unzer Invoice
+- Wero
 - WeChat Pay
 
