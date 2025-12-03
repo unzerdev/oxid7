@@ -1,5 +1,9 @@
 # Release Notes for Unzer Payment Plugin for OXID eShop 7
 
+## [1.1.1]
+
+- iDEAL Payment Logo Update
+
 ## [1.1.0]
 
 - Added Wero payment method

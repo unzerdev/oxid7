@@ -165,6 +165,10 @@ class OrderController extends OrderController_parent
             $unzerCustomer = new \UnzerSDK\Resources\Customer();
         }
 
+        $lang = Registry::getLang();
+        $iLang = $lang->getBaseLanguage();
+        $sLang = $lang->getLanguageAbbr($iLang);
+
         $unzerCustomer
             ->setCustomerId($customerId)
             ->setFirstname($oUser->oxuser__oxfname->value)
@@ -173,6 +177,7 @@ class OrderController extends OrderController_parent
             ->setEmail($oUser->oxuser__oxusername->value)
             ->setMobile($oUser->oxuser__oxmobfon->value)
             ->setPhone($oUser->oxuser__oxfon->value)
+            ->setLanguage($sLang)
             ->setBillingAddress($unzerAddressBilling)
             ->setShippingAddress($unzerAddressDelivery);
             
