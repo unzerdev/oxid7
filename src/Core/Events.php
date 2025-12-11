@@ -37,7 +37,9 @@ class Events
      */
     public static function onDeactivate()
     {
-        self::deactivePaymethods();
+        if (!isset($_REQUEST['is_unser_config_update'])) {
+            self::deactivePaymethods();
+        }
         self::clearTmp();
     }
 

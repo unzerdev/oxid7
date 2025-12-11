@@ -83,28 +83,30 @@ class ModuleConfiguration extends ModuleConfiguration_parent
     {
         parent::saveConfVars();
 
-        $available_payment_methods_strings = [];
-        foreach (UnzerpaymentClient::getAvailablePaymentMethods() as $paymentMethod) {
-            $available_payment_methods_strings[] = Constants::PAYMENT_METHOD_PREFIX . str_replace('-', '_', $paymentMethod->type);
-        }
-
-        // deactivate methods that are not available for the specific keypair
-        $toDeactivateMethods = array_keys(Constants::PAYMENT_METHODS);
-        foreach ($toDeactivateMethods as &$sMethod) {
-            $sMethod = Constants::PAYMENT_METHOD_PREFIX . $sMethod;
-        }
-        foreach ($toDeactivateMethods as $sMethodKey => $sMethodName) {
-            if (in_array($sMethodName, $available_payment_methods_strings)) {
-                unset($toDeactivateMethods[$sMethodKey]);
+        if (isset($_REQUEST['unzer_payment_set_method_status']) && $_REQUEST['unzer_payment_set_method_status'] == '1') {
+            $available_payment_methods_strings = [];
+            foreach (UnzerpaymentClient::getAvailablePaymentMethods() as $paymentMethod) {
+                $available_payment_methods_strings[] = Constants::PAYMENT_METHOD_PREFIX . str_replace('-', '_', $paymentMethod->type);
             }
-        }
-        $sPaymenthodIds = "'" . implode("','", $toDeactivateMethods) . "'";
-        $sQ = "update oxpayments set oxactive = 0 where oxid in ($sPaymenthodIds)";
-        DatabaseProvider::getDB()->Execute($sQ);
 
-        $sPaymenthodIds = "'" . implode("','", $available_payment_methods_strings) . "'";
-        $sQ = "update oxpayments set oxactive = 1 where oxid in ($sPaymenthodIds)";
-        DatabaseProvider::getDB()->Execute($sQ);
+            // deactivate methods that are not available for the specific keypair
+            $toDeactivateMethods = array_keys(Constants::PAYMENT_METHODS);
+            foreach ($toDeactivateMethods as &$sMethod) {
+                $sMethod = Constants::PAYMENT_METHOD_PREFIX . $sMethod;
+            }
+            foreach ($toDeactivateMethods as $sMethodKey => $sMethodName) {
+                if (in_array($sMethodName, $available_payment_methods_strings)) {
+                    unset($toDeactivateMethods[$sMethodKey]);
+                }
+            }
+            $sPaymenthodIds = "'" . implode("','", $toDeactivateMethods) . "'";
+            $sQ = "update oxpayments set oxactive = 0 where oxid in ($sPaymenthodIds)";
+            DatabaseProvider::getDB()->Execute($sQ);
+
+            $sPaymenthodIds = "'" . implode("','", $available_payment_methods_strings) . "'";
+            $sQ = "update oxpayments set oxactive = 1 where oxid in ($sPaymenthodIds)";
+            DatabaseProvider::getDB()->Execute($sQ);
+        }
 
         $this->addTplParam('unzer_success_message', 'Settings successfully updated');
 
