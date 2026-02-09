@@ -1,5 +1,9 @@
 # Release Notes for Unzer Payment Plugin for OXID eShop 7
 
+## [1.1.3]
+
+- Fixed transaction type for Wero
+
 ## [1.1.2]
 
 - Optimization saving settings in backend
