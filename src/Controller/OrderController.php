@@ -433,6 +433,7 @@ class OrderController extends OrderController_parent
         $session->setVariable('UnzerPaypageId', $paypage->getId());
         $session->setVariable('UnzerMetadataId', $metadata->getId());
         $session->setVariable('UnzerSelectedPaymentMethod', $selectedPaymentMethod);
+        $session->setVariable('UnzerPreparedOrderId', $orderId);
         $this->addTplParam('unzerPaypageToken', $paypage->getId());
         $this->addTplParam('unzerRedirectUrl', $redirectUrl);
         $this->addTplParam('unzerErrorRedirectUrl', Registry::getConfig()->getCurrentShopUrl().'index.php?cl=payment&payerror=unzer');

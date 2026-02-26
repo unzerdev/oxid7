@@ -1,0 +1,4 @@
+table_storage:
+  table_name: oxmigrations_unzerpayment
+migrations_paths:
+  'Unzer\UnzerPayment\Migrations': data

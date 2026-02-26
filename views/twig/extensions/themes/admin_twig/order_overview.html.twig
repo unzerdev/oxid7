@@ -1,0 +1,11 @@
+{% extends "order_overview.html.twig" %}
+
+{% block admin_order_overview_order_number %}
+    {{ parent() }}
+    {% if edit.oxorder__oxpaymenttype.value starts with 'up_' %}
+        {% set isUnzerPayment = true %}
+    {% endif %}
+    {% if isUnzerPayment != false %}
+        <b>{{ translate({ ident: "UNZER_ORDERNR" }) }}: </b>{{ edit.oxorder__oxunzerpayordernr.value }}<br>
+    {% endif %}
+{% endblock %}

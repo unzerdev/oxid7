@@ -34,6 +34,7 @@ $aLang = [
     'SHOP_MODULE_UnzerPaymentWeroChargeMode_charge' => 'Einzug',
     'UNZER_WEBHOOKS' => 'Webhooks',
     'UNZER_ID' => 'ID',
+    'UNZER_ORDERNR' => 'Unzer OrderNr.',
     'UNZER_SHORT_ID' => 'Short-ID',
     'UNZER_WEBHOOK_EVENT' => 'Event',
     'UNZER_WEBHOOK_URL' => 'URL',
