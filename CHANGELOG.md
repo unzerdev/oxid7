@@ -1,5 +1,9 @@
 # Release Notes for Unzer Payment Plugin for OXID eShop 7
 
+## [1.1.4]
+
+- Added Unzer Order ID to enable cross platform search
+
 ## [1.1.3]
 
 - Fixed transaction type for Wero

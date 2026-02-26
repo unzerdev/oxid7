@@ -39,6 +39,7 @@ class ThankYouController extends ThankYouController_parent
             $order = $this->getOrder();
             if (UnzerpaymentHelper::getInstance()->isUnzerPaymentMethod($order->oxorder__oxpaymenttype->value)) {
                 $UnzerMetadataId = $session->getVariable('UnzerMetadataId');
+                $UnzerPreparedOrderId = $session->getVariable('UnzerPreparedOrderId');
 
                 $metadata = UnzerpaymentClient::getInstance()->fetchMetadata(
                     $UnzerMetadataId
@@ -63,6 +64,14 @@ class ThankYouController extends ThankYouController_parent
                 $paymentUnzerObject = UnzerpaymentClient::getInstance()->getUnzerObject()->fetchPayment($payment->getPaymentId());
 
                 $logger->addLog('paymentUnzerObject', 3, false, [$paymentUnzerObject], );
+
+                if ($UnzerPreparedOrderId != '') {
+                    try {
+                        $order->setUnzerOrderNr($UnzerPreparedOrderId);
+                    } catch (\Exception $e) {
+                        $logger->addLog('Could not update local unzer order id', 2, $e, [$UnzerPreparedOrderId]);
+                    }
+                }
 
                 if ($payment->getTransactionStatus() == \UnzerSDK\Constants\TransactionStatus::STATUS_SUCCESS) {
                     if (sizeof($paymentUnzerObject->getCharges()) > 0) {
@@ -89,6 +98,7 @@ class ThankYouController extends ThankYouController_parent
             }
             $session->deleteVariable('UnzerPaypageId');
             $session->deleteVariable('UnzerMetadataId');
+            $session->deleteVariable('UnzerPreparedOrderId');
         }
     }
 
