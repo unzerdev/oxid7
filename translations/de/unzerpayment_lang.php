@@ -34,6 +34,7 @@ $aLang = [
     'UNZER_IBAN' => 'IBAN',
     'UNZER_BIC' => 'BIC',
     'UNZER_PLEASE_USE_DESCRIPTOR' => 'Bitte nutzen Sie diese Identifikationsnummer als Verwendungszweck',
+    'UNZER_PAYMENT_DETAILS' => 'Zahlungsdaten fÃ¼r Ihre Bestellung',
 
 
 ];
