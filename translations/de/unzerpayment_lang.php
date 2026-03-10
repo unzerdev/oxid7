@@ -13,7 +13,7 @@ $aLang = [
     'UNZER_PAYMENT_METHODNAME_GOOGLEPAY' => 'Google Pay',
     'UNZER_PAYMENT_METHODNAME_IDEAL' => 'iDEAL',
     'UNZER_PAYMENT_METHODNAME_KLARNA' => 'Klarna',
-    'UNZER_PAYMENT_METHODNAME_OPENBANKING_PIS' => 'Direktüberweisung',
+    'UNZER_PAYMENT_METHODNAME_OPENBANKING_PIS' => 'DirektÃ¼berweisung',
     'UNZER_PAYMENT_METHODNAME_PAYPAL' => 'PayPal',
     'UNZER_PAYMENT_METHODNAME_PAYU' => 'PayU',
     'UNZER_PAYMENT_METHODNAME_POST_FINANCE_CARD' => 'PostFinance Card',
@@ -29,7 +29,7 @@ $aLang = [
     'UNZER_PAYMENT_METHODNAME_WERO' => 'Wero',
     'UNZER_PAYMENT_METHODNAME_WECHATPAY' => 'WeChat Pay',
 
-    'UNZER_PLEASE_TRANSFER' => 'Bitte überweisen Sie den Betrag in Höhe von %s %s auf das folgende Konto:',
+    'UNZER_PLEASE_TRANSFER' => 'Bitte Ã¼berweisen Sie den Betrag in HÃ¶he von %s %s auf das folgende Konto:',
     'UNZER_HOLDER' => 'Kontoinhaber',
     'UNZER_IBAN' => 'IBAN',
     'UNZER_BIC' => 'BIC',
