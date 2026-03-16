@@ -3,6 +3,7 @@
 ## [1.1.5]
 
 - Updated iDEAL Payment naming and logo
+- Fix for direct debit paypage creation
 
 ## [1.1.4]
 
