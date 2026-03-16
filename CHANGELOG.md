@@ -1,5 +1,9 @@
 # Release Notes for Unzer Payment Plugin for OXID eShop 7
 
+## [1.1.5]
+
+- Updated iDEAL Payment naming and logo
+
 ## [1.1.4]
 
 - Added Unzer Order ID to enable cross platform search
