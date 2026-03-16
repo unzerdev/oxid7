@@ -335,13 +335,13 @@ class OrderController extends OrderController_parent
                 $currentMethodConfig
             );
 
-        if ($oUser->hasAccount() && in_array($paymentMethodClass, ['card', 'sepaDirectDebit', 'paypal'])) {
+        if ($oUser->hasAccount() && in_array($paymentMethodClass, ['card', 'paypal'])) {
             $currentMethodConfig->setCredentialOnFile(true);
             $paymentMethodsConfig->addMethodConfig(
                 $paymentMethodClass,
                 $currentMethodConfig
             );
-        } elseif (!$oUser->hasAccount() && in_array($paymentMethodClass, ['card', 'sepaDirectDebit', 'paypal'])) {
+        } elseif (!$oUser->hasAccount() && in_array($paymentMethodClass, ['card', 'paypal'])) {
             $currentMethodConfig->setCredentialOnFile(false);
             $paymentMethodsConfig->addMethodConfig(
                 $paymentMethodClass,
