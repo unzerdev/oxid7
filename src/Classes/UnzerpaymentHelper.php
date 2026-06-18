@@ -223,7 +223,9 @@ class UnzerpaymentHelper
             ->select('oxid')
             ->from('oxorder')
             ->where('oxtransid = :transactionId')
-            ->setParameter('transactionId', $transactionId);
+            ->andWhere('oxshopid = :oxshopid')
+            ->setParameter('transactionId', $transactionId)
+            ->setParameter('oxshopid', Registry::getConfig()->getShopId());
         $orderId = $queryBuilder->execute()->fetchColumn();
         return $orderId;
     }
