@@ -267,7 +267,7 @@
                                 {{ unzer_transactions.remaining }}
                             </td>
                         </tr>
-                        {% if unzerNoActionsBecauseError is not defined %}
+                        {% if unzerNoActionsBecauseError is not defined and unzerNoCapture is not defined and unzerNoCancel is not defined %}
                             {% if unzer_transactions.remainingPlain and unzer_transactions.paymentBaseMethod != 'ppy' and unzer_transactions.paymentBaseMethod != 'p24' %}
                                 <tr>
                                     <td colspan="2">
@@ -278,14 +278,18 @@
                                             <input type="hidden" name="cl" value="unzer_payment_admin_order">
                                             <input type="hidden" name="fnc" value="executeCapture">
                                             <input type="hidden" name="language" value="{{ actlang }}">
-                                            <input type="number" step="0.01" min="0.01" max="{{ unzer_transactions.remainingPlain }}" value="{{ unzer_transactions.remainingPlain }}" name="unzer_capture_amount" id="unzer-capture-amount-input" />
-                                            <button class="saveButton btn btn-primary btn-sm btn-capture" type="submit" name="unzer_action" value="unzer_capture">
-                                                {{ translate({ ident: "UNZER_CAPTURE_AMOUNT" }) }}
-                                            </button>
-                                            {% if unzer_transactions.canCancel and unzer_transactions.paymentBaseMethod != 'p24' %}
-                                                <button class="saveButton btn btn-primary btn-sm btn-cancel" type="button" id="unzer_cancel_payment_btn" name="unzer_cancel_payment" value="unzer_cancel_payment_action">
-                                                    {{ translate({ ident: "UNZER_CANCEL_ORDER" }) }}
+                                            {% if unzerNoCapture is not defined %}
+                                                <input type="number" step="0.01" min="0.01" max="{{ unzer_transactions.remainingPlain }}" value="{{ unzer_transactions.remainingPlain }}" name="unzer_capture_amount" id="unzer-capture-amount-input" />
+                                                <button class="saveButton btn btn-primary btn-sm btn-capture" type="submit" name="unzer_action" value="unzer_capture">
+                                                    {{ translate({ ident: "UNZER_CAPTURE_AMOUNT" }) }}
                                                 </button>
+                                            {% endif %}
+                                            {% if unzer_transactions.canCancel and unzer_transactions.paymentBaseMethod != 'p24' %}
+                                                {% if unzerNoCancel is not defined %}
+                                                    <button class="saveButton btn btn-primary btn-sm btn-cancel" type="button" id="unzer_cancel_payment_btn" name="unzer_cancel_payment" value="unzer_cancel_payment_action">
+                                                        {{ translate({ ident: "UNZER_CANCEL_ORDER" }) }}
+                                                    </button>
+                                                {% endif %}
                                             {% endif %}
                                         </form>
                                     </td>
