@@ -67,6 +67,14 @@ class AdminOrderController extends AdminDetailsController
                             $params['unzer_account_descriptor'] = $payment->getInitialTransaction()->getDescriptor();
                             $this->addTplParam('additionalUnzerPaymentInformation', $renderer->renderTemplate('@' . Constants::MODULE_ID . '/_inc/transfer_data', $params));
                         }
+                        if ($paymentId == 'obp') {
+                            if (isset($payment->getCharges()[0])) {
+                                if ($payment->getCharges()[0]->isPending()) {
+                                    $this->addTplParam('unzerNoCapture', true);
+                                    $this->addTplParam('unzerNoCancel', true);
+                                }
+                            }
+                        }
                         $this->addTplParam('unzer_transactions', $transactions);
                         if (sizeof($transactions['transactions']) == 1) {
                             if ($transactions['transactions'][0]['status'] == 'error') {

@@ -73,8 +73,10 @@ class ThankYouController extends ThankYouController_parent
                     }
                 }
 
-                if ($payment->getTransactionStatus() == \UnzerSDK\Constants\TransactionStatus::STATUS_SUCCESS) {
-                    if (sizeof($paymentUnzerObject->getCharges()) > 0) {
+                $unzerPaymentId = (\UnzerSDK\Services\IdService::getResourceTypeFromIdString($paymentUnzerObject->getPaymentType()->getId()));
+
+                if ($unzerPaymentId == 'obp' && $payment->getTransactionStatus() == \UnzerSDK\Constants\TransactionStatus::STATUS_SUCCESS && isset($paymentUnzerObject->getCharges()[0])) {
+                    if ($paymentUnzerObject->getCharges()[0]->isSuccess()) {
                         UnzerpaymentHelper::getInstance()->setOrderStatus(
                             $order->getId(),
                             'OK'
@@ -82,19 +84,35 @@ class ThankYouController extends ThankYouController_parent
                         UnzerpaymentHelper::getInstance()->setOrderPaid(
                             $order->getId(),
                         );
-                    } else {
+                    } elseif ($paymentUnzerObject->getCharges()[0]->isPending()) {
                         UnzerpaymentHelper::getInstance()->setOrderStatus(
                             $order->getId(),
-                            'AUTHORIZED'
+                            'NOT_FINISHED'
                         );
                     }
                 } else {
-                    UnzerpaymentHelper::getInstance()->setOrderStatus(
-                        $order->getId(),
-                        'NOT_FINISHED'
-                    );
+                    if ($payment->getTransactionStatus() == \UnzerSDK\Constants\TransactionStatus::STATUS_SUCCESS) {
+                        if (sizeof($paymentUnzerObject->getCharges()) > 0) {
+                            UnzerpaymentHelper::getInstance()->setOrderStatus(
+                                $order->getId(),
+                                'OK'
+                            );
+                            UnzerpaymentHelper::getInstance()->setOrderPaid(
+                                $order->getId(),
+                            );
+                        } else {
+                            UnzerpaymentHelper::getInstance()->setOrderStatus(
+                                $order->getId(),
+                                'AUTHORIZED'
+                            );
+                        }
+                    } else {
+                        UnzerpaymentHelper::getInstance()->setOrderStatus(
+                            $order->getId(),
+                            'NOT_FINISHED'
+                        );
+                    }
                 }
-
             }
             $session->deleteVariable('UnzerPaypageId');
             $session->deleteVariable('UnzerMetadataId');
