@@ -95,4 +95,15 @@ class PaymentController extends PaymentController_parent
 
         return $paymentList;
     }
+
+    /**
+     * Checks if paymentId is an unzer payment
+     *
+     * @return bool
+     *
+     */
+    public function isUnzerPaymentMethod(string $paymentId): bool
+    {
+        return UnzerpaymentHelper::getInstance()->isUnzerPaymentMethod($paymentId);
+    }
 }
