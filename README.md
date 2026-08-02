@@ -25,6 +25,11 @@ If you are using a Content Security Policy (CSP) you must include different Unze
  ```
  composer require unzerdev/oxid7
  ```
+##### 2. Execute migration script to add database field OXUNZERPAYORDERNR to table oxorder
+```
+/vendor/bin/oe-eshop-db_migrate migrations:migrate
+```
+
 ##### 2. Provide write access to /var/ directory during execution
 
 ## Support

@@ -2,13 +2,14 @@
 
 {% set sModuleId = '@' ~ constant('\\Unzer\\UnzerPayment\\Constants\\Constants::MODULE_ID') %}
 
-{% block checkout_thankyou_info %}
+{% block checkout_thankyou_payment_info %}
 
     {% if unzerPaymentId is defined %}
         <p style="font-style: italic">
             Unzer Payment-ID: {{ unzerPaymentId }}<br>
             Unzer Short-ID: {{ unzerShortId }}
         </p>
+        <h5><u>{{ translate({ ident: "UNZER_PAYMENT_DETAILS" }) }}</u></h5>
     {% endif %}
 
     {% if needsUnzerPaymentInfo is defined %}

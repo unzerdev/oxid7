@@ -34,5 +34,6 @@ $aLang = [
     'UNZER_IBAN' => 'IBAN',
     'UNZER_BIC' => 'BIC',
     'UNZER_PLEASE_USE_DESCRIPTOR' => 'Please use only this identification number as the descriptor',
+    'UNZER_PAYMENT_DETAILS' => 'Payment details for your order',
 
 ];
