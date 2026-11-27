@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Unzer\UnzerPayment\PaymentMethods;
 
+use OxidEsales\EshopCommunity\Core\Di\ContainerFacade;
+use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServiceInterface;
 use Unzer\UnzerPayment\Constants\Constants;
 
 class UnzerPaypalPaymentMethod extends AbstractUnzerPaymentMethod
@@ -12,4 +14,12 @@ class UnzerPaypalPaymentMethod extends AbstractUnzerPaymentMethod
     const UNZER_LONG_CODE =  Constants::PAYMENT_METHODS['paypal']['long_code'];
     const PAYMENT_METHOD_CODE =  Constants::PAYMENT_METHODS['paypal']['payment_method_code'];
     const PAYMENT_METHOD_NAME = Constants::PAYMENT_METHODS['paypal']['name'];
+
+    public function hasExpressCheckout()
+    {
+        if (ContainerFacade::get(ModuleSettingServiceInterface::class)->getBoolean('UnzerPaymentPaypalExpressCheckout', Constants::MODULE_ID)) {
+            return true;
+        }
+        return false;
+    }
 }

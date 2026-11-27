@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Unzer\UnzerPayment\Classes;
 
+use Unzer\UnzerPayment\Service\ExpressPaymentMethods;
 use OxidEsales\Eshop\Core\Registry;
 use OxidEsales\EshopCommunity\Core\Di\ContainerFacade;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
 use OxidEsales\EshopCommunity\Internal\Framework\Database\QueryBuilderFactoryInterface;
 use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServiceInterface;
 use OxidEsales\EshopCommunity\Internal\Transition\Adapter\TemplateLogic\FormatPriceLogic;
-use Unzer\UnzerPayment\Classes\Payment;
+use OxidEsales\Eshop\Application\Model\PaymentList;
 use Unzer\UnzerPayment\Constants\Constants;
 use UnzerSDK\Resources\TransactionTypes\AbstractTransactionType;
 use UnzerSDK\Resources\TransactionTypes\Authorization;
@@ -48,6 +49,15 @@ class UnzerpaymentHelper
     public function getNotifyUrl()
     {
         return Registry::getConfig()->getCurrentShopUrl(false).'index.php?cl=unzer_payment_webhook&fnc=notify';
+    }
+
+    /**
+     * @param $method
+     * @return string
+     */
+    public function getExpressCoUrl($method): string
+    {
+        return Registry::getConfig()->getCurrentShopUrl(false).'index.php?cl=unzer_payment_express&fnc=' . $method;
     }
 
     /**
@@ -242,7 +252,7 @@ class UnzerpaymentHelper
         $configKey = 'UnzerPayment' . ucfirst($paymentMethod::UNZER_LONG_CODE) . 'ChargeMode';
         $moduleSettingService = ContainerFacade::get(ModuleSettingServiceInterface::class);
         if ($moduleSettingService->exists($configKey, Constants::MODULE_ID)) {
-            return $moduleSettingService->getString($configKey, Constants::MODULE_ID);
+            return (string)$moduleSettingService->getString($configKey, Constants::MODULE_ID);
         }
         return '';
     }
@@ -477,6 +487,63 @@ class UnzerpaymentHelper
             return str_replace('-', '_', $matches[0]);
         }
         return 'de_DE'; // Fallback
+    }
+
+    /**
+     * @param string $paymentId
+     * @return bool
+     */
+    public static function isPaymentMethodAvailable(string $paymentId): bool
+    {
+        $basket = Registry::getSession()->getBasket();
+        $basket->calculateBasket(true);
+        $paymentList = oxNew(PaymentList::class);
+        $payments = $paymentList->getPaymentList(
+            $basket->getShippingId(),
+            $basket->getPrice()->getBruttoPrice(),
+            Registry::getSession()->getUser()
+        );
+
+        return isset($payments[$paymentId]);
+    }
+
+    /**
+     * @return bool
+     */
+    public static function hasAtLeastOneActiveExpressCheckoutOption(): bool
+    {
+        foreach ([ExpressPaymentMethods::APPLE_PAY => 'Applepay', ExpressPaymentMethods::PAYPAL => 'Paypal', ExpressPaymentMethods::GOOGLE_PAY => 'Googlepay'] as $expressMethodPaymentId => $expressMethod) {
+            if (!self::isPaymentMethodAvailable($expressMethodPaymentId)) {
+                continue;
+            }
+            $class = '\\Unzer\\UnzerPayment\\PaymentMethods\\Unzer' . $expressMethod . 'PaymentMethod';
+            if (!class_exists($class)) {
+                continue;
+            }
+            $gateway = new $class;
+            if ($gateway->hasExpressCheckout()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param $expressMethodPaymentId (Applepay, Paypal, Googlepay)
+     * @return bool
+     */
+    public static function hasActiveExpressCheckoutOption($expressMethodPayment): bool
+    {
+        if (self::isPaymentMethodAvailable('up_' . strtolower($expressMethodPayment))) {
+            $class = '\\Unzer\\UnzerPayment\\PaymentMethods\\Unzer' . $expressMethodPayment . 'PaymentMethod';
+            if (class_exists($class)) {
+                $gateway = new $class;
+                if ($gateway->hasExpressCheckout()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 

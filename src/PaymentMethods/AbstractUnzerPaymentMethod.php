@@ -29,5 +29,12 @@ class AbstractUnzerPaymentMethod
         return static::ALLOWED_COUNTRIES;
     }
 
+    public function hasExpressCheckout()
+    {
+        return false;
+    }
+
+
+
 
 }

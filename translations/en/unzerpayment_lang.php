@@ -35,4 +35,7 @@ $aLang = [
     'UNZER_BIC' => 'BIC',
     'UNZER_PLEASE_USE_DESCRIPTOR' => 'Please use only this identification number as the descriptor',
 
+    'CANCEL_EXPRESS_CO' => 'Cancel Express Checkout',
+    'UNZER_GENERIC_ERROR' => 'There has been an error.',
+
 ];

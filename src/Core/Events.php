@@ -120,6 +120,7 @@ class Events
      */
     public static function addDatabaseStructure()
     {
+        \Unzer\UnzerPayment\Service\PreOrderMigration::migrate();
     }
 
     /**

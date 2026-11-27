@@ -124,13 +124,17 @@ class UnzerpaymentClient extends \UnzerSDK\Unzer {
         if (is_null($unzerClient)) {
             return [];
         }
-        $keypairResponse = $unzerClient->fetchKeypair(true);
-        $availablePaymentTypes = $keypairResponse->getAvailablePaymentTypes();
-        usort($availablePaymentTypes, function ($a, $b) { return strcmp(strtolower($a->type), strtolower($b->type)); });
-        foreach ($availablePaymentTypes as $availablePaymentTypeKey => &$availablePaymentType) {
-            if ($availablePaymentType->type == 'PIS' || $availablePaymentType->type == 'giropay') {
-                unset($availablePaymentTypes[$availablePaymentTypeKey]);
+        try {
+            $keypairResponse = $unzerClient->fetchKeypair(true);
+            $availablePaymentTypes = $keypairResponse->getAvailablePaymentTypes();
+            usort($availablePaymentTypes, function ($a, $b) { return strcmp(strtolower($a->type), strtolower($b->type)); });
+            foreach ($availablePaymentTypes as $availablePaymentTypeKey => &$availablePaymentType) {
+                if ($availablePaymentType->type == 'PIS' || $availablePaymentType->type == 'giropay') {
+                    unset($availablePaymentTypes[$availablePaymentTypeKey]);
+                }
             }
+        } catch (\Exception $e) {
+            return [];
         }
         return $availablePaymentTypes;
     }

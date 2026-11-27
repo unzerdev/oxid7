@@ -21,6 +21,9 @@ class WebhookController extends FrontendController
         WebhookEvents::AUTHORIZE_CANCELED,
         WebhookEvents::AUTHORIZE_SUCCEEDED,
         WebhookEvents::CHARGE_SUCCEEDED,
+        WebhookEvents::PAYMENT_PENDING,
+        WebhookEvents::CHARGE_PENDING,
+        WebhookEvents::PAYMENT_COMPLETED,
         WebhookEvents::PAYMENT_CHARGEBACK,
     );
 
@@ -48,7 +51,7 @@ class WebhookController extends FrontendController
             exit();
         }
 
-        if ( ! in_array( $data['event'], self::REGISTERED_EVENTS, true ) ) {
+        if ( ! in_array( $data['event'] ?? '', self::REGISTERED_EVENTS, true ) ) {
             $this->renderJson(
                 array(
                     'success' => true,
@@ -65,6 +68,37 @@ class WebhookController extends FrontendController
                 'data' => $data
             ]);
             exit();
+        }
+
+        if (in_array($data['event'], [WebhookEvents::CHARGE_SUCCEEDED, WebhookEvents::PAYMENT_COMPLETED], true)) {
+            $existingId = UnzerpaymentHelper::getInstance()->getOrderIdByTransactionId($data['paymentId']);
+            if ($existingId) {
+                $existing = oxNew(\OxidEsales\Eshop\Application\Model\Order::class);
+                if ($existing->load($existingId) && $existing->getFieldData('oxpaymenttype') === 'up_prepayment'
+                    && !(new \Unzer\UnzerPayment\Service\PreOrderService())->find('oxid', $existingId)) {
+                    $payment = $this->unzer->fetchPayment($data['paymentId']);
+                    \Unzer\UnzerPayment\Service\PrepaymentStatus::updateExistingOrder($payment, $existing);
+                    $this->renderJson(['success' => true]);
+                }
+            }
+        }
+
+        if (\Unzer\UnzerPayment\Service\PreOrderService::tableExists()) {
+            try {
+                $pendingEvent = in_array($data['event'], [WebhookEvents::PAYMENT_PENDING, WebhookEvents::CHARGE_PENDING], true);
+                $result = (new \Unzer\UnzerPayment\Service\PreOrderService())->fromPayment((string) $data['paymentId'], $pendingEvent);
+                if ($result === false && in_array($data['event'], [WebhookEvents::AUTHORIZE_SUCCEEDED, WebhookEvents::CHARGE_SUCCEEDED, WebhookEvents::PAYMENT_COMPLETED], true)) {
+                    http_response_code(503);
+                    $this->renderJson(['success' => false, 'retry' => true]);
+                }
+                if ($result !== null) {
+                    $this->renderJson(['success' => true, 'finalized' => (bool) $result]);
+                }
+            } catch (\Throwable $e) {
+                http_response_code(503);
+                $this->logger->addLog('preliminary order webhook failed; retry required', 1, $e, []);
+                $this->renderJson(['success' => false, 'retry' => true]);
+            }
         }
 
         $orderId = UnzerpaymentHelper::getInstance()->getOrderIdByTransactionId(

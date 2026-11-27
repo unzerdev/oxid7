@@ -2,10 +2,18 @@
 
 {% block admin_order_overview_order_number %}
     {{ parent() }}
-    {% if edit.oxorder__oxpaymenttype.value starts with 'up_' %}
-        {% set isUnzerPayment = true %}
+    {% if edit.oxorder__oxpaymenttype.value starts with 'up_' and edit.oxorder__oxunzerpayordernr.value %}
+        <b>{{ translate({ ident: "UNZER_ORDERNR" }) }}: </b>{{ edit.oxorder__oxunzerpayordernr.value|escape }}<br>
     {% endif %}
-    {% if isUnzerPayment != false %}
-        <b>{{ translate({ ident: "UNZER_ORDERNR" }) }}: </b>{{ edit.oxorder__oxunzerpayordernr.value }}<br>
-    {% endif %}
+{% endblock %}
+
+{% block admin_order_overview_checkout %}
+    <tr>
+        <td class="edittext">{{ translate({ ident: "ORDER_OVERVIEW_PAYMENTTYPE" }) }}: </td>
+        <td class="edittext"><b>{{ paymentType.oxpayments__oxdesc.value }} {% if edit.oxorder__oxunzerexpressmethod == '1' %}Express{% endif %}</b></td>
+    </tr>
+    <tr>
+        <td class="edittext">{{ translate({ ident: "ORDER_OVERVIEW_DELTYPE" }) }}: </td>
+        <td class="edittext"><b>{{ deliveryType.oxdeliveryset__oxtitle.value }}</b><br></td>
+    </tr>
 {% endblock %}
