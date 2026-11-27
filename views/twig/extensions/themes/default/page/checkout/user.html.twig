@@ -1,0 +1,8 @@
+{% extends 'page/checkout/user.html.twig' %}
+
+{% block checkout_user_change %}
+    {% if oxcmp_user %}
+        {% set oxcmp_user = oViewConf.getUnzerCheckoutAddressUser(oxcmp_user) %}
+    {% endif %}
+    {{ parent() }}
+{% endblock %}

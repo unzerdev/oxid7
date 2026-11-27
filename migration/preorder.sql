@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS unzer_preorders (
+ oxid CHAR(32) NOT NULL,
+ shopid VARCHAR(32) NOT NULL,
+ userid CHAR(32) NOT NULL,
+ reference VARCHAR(64) NOT NULL,
+ paypageid VARCHAR(128) DEFAULT NULL,
+ paymentid VARCHAR(128) DEFAULT NULL,
+ reservationtoken VARCHAR(64) NOT NULL DEFAULT '',
+ fingerprint CHAR(64) NOT NULL,
+ basket MEDIUMTEXT NOT NULL,
+ state VARCHAR(24) NOT NULL DEFAULT 'prepared',
+ mailuser VARCHAR(24) NOT NULL DEFAULT 'new',
+ mailowner VARCHAR(24) NOT NULL DEFAULT 'new',
+ created DATETIME NOT NULL,
+ finalized DATETIME DEFAULT NULL,
+ PRIMARY KEY (oxid),
+ UNIQUE KEY reference (reference),
+ UNIQUE KEY paypageid (paypageid),
+ UNIQUE KEY paymentid (paymentid),
+ KEY shopstate (shopid, state)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -13,10 +13,22 @@
         customElements.whenDefined("unzer-pay-page"),
     ]).then(() => {
         const btnCheckout = document.getElementById("unzer-checkout-btn");
+        {% if unzerOpenPreparedPage %}
+        showCheckout();
+        {% endif %}
         btnCheckout.addEventListener("click", showCheckout);
     });
 
     function showCheckout() {
+        {% if unzerPreCreateOrder and not unzerOpenPreparedPage %}
+        const button = document.getElementById('unzer-checkout-btn');
+        const form = button.form || document.getElementById('orderConfirmAgbBottom');
+        if (!form || !form.reportValidity()) return;
+        form.elements.fnc.value = 'unzerPrepareOrder';
+        button.disabled = true;
+        form.requestSubmit();
+        return;
+        {% endif %}
         const unzerContainer = document.getElementById("unzer-container");
         unzerContainer.innerHTML = `
             <unzer-payment publicKey="{{ unzerPubKey }}" locale="{{ unzerLocale }}">

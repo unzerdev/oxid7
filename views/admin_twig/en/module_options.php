@@ -3,6 +3,7 @@
 $sLangName = 'English';
 
 $aLang = [
+    'SHOP_MODULE_blUnzerPreCreateOrder' => 'Create order before Unzer payment (webhook completion)',
     'charset' => 'UTF-8',
 
     'SHOP_MODULE_GROUP_unzer_payment_main' => 'Main Settings',
@@ -17,6 +18,9 @@ $aLang = [
     'SHOP_MODULE_UnzerPaymentLogLevel_WARNING' => 'WARNING: Log warnings and errors',
     'SHOP_MODULE_UnzerPaymentLogLevel_DEBUG' => 'DEBUG: Log all information',
     'SHOP_MODULE_UnzerPaymentClickToPay' => 'Activate Click to Pay for card payments',
+    'SHOP_MODULE_UnzerPaymentCOFCreditCard' => 'Show "Save Credit Card for next order" on checkout',
+    'SHOP_MODULE_UnzerPaymentCOFPaypal' => 'Show "Save Paypal Account" on checkout',
+    'SHOP_MODULE_UnzerPaymentCOFDirectDebit' => 'Show "Save Direct Debit Mandate" on checkout',
     'SHOP_MODULE_UnzerPaymentCardChargeMode' => 'Card booking mode',
     'SHOP_MODULE_UnzerPaymentApplepayChargeMode' => 'Apple Pay booking mode',
     'SHOP_MODULE_UnzerPaymentGooglepayChargeMode' => 'Google Pay booking mode',
@@ -32,6 +36,11 @@ $aLang = [
     'SHOP_MODULE_UnzerPaymentPaypalChargeMode_charge' => 'charge',
     'SHOP_MODULE_UnzerPaymentWeroChargeMode_authorize' => 'authorize',
     'SHOP_MODULE_UnzerPaymentWeroChargeMode_charge' => 'charge',
+    'SHOP_MODULE_UnzerPaymentApplepayExpressCheckout' => 'Activate Apple Pay Express Checkout',
+    'SHOP_MODULE_UnzerPaymentGooglepayExpressCheckout' => 'Activate Google Pay Express Checkout',
+    'SHOP_MODULE_UnzerPaymentPaypalExpressCheckout' => 'Activate Paypal Express Checkout',
+    'SHOP_MODULE_UnzerPaymentGooglepayMerchantId' => 'Google Pay Merchant Id',
+    'SHOP_MODULE_UnzerPaymentGooglepayMerchantName' => 'Google Pay Merchant Name',
     'UNZER_WEBHOOKS' => 'Webhooks',
     'UNZER_ID' => 'ID',
     'UNZER_ORDERNR' => 'Unzer OrderNr.',
@@ -65,6 +74,5 @@ $aLang = [
     'UNZER_IBAN' => 'IBAN',
     'UNZER_BIC' => 'BIC',
     'UNZER_PLEASE_USE_DESCRIPTOR' => 'Please use only this identification number as the descriptor',
-
 ];
 

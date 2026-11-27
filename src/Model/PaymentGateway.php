@@ -4,33 +4,119 @@ declare(strict_types=1);
 
 namespace Unzer\UnzerPayment\Model;
 
+use OxidEsales\Eshop\Application\Model\Order;
+use OxidEsales\Eshop\Core\Field;
 use OxidEsales\Eshop\Core\Registry;
+use OxidEsales\EshopCommunity\Core\Di\ContainerFacade;
 use OxidEsales\EshopCommunity\Internal\Container\ContainerFactory;
+use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServiceInterface;
 use OxidEsales\EshopCommunity\Internal\Framework\Templating\TemplateRendererBridgeInterface;
 use Unzer\UnzerPayment\Classes\UnzerpaymentClient;
 use Unzer\UnzerPayment\Classes\UnzerpaymentHelper;
 use Unzer\UnzerPayment\Constants\Constants;
+use Unzer\UnzerPayment\Controller\ThankYouController;
+use Unzer\UnzerPayment\PaymentMethods\UnzerApplepayPaymentMethod;
+use Unzer\UnzerPayment\PaymentMethods\UnzerGooglepayPaymentMethod;
+use Unzer\UnzerPayment\PaymentMethods\UnzerPaypalPaymentMethod;
+use Unzer\UnzerPayment\Service\BasketService;
+use Unzer\UnzerPayment\Service\CustomerService;
 use Unzer\UnzerPayment\Service\DebugHandler;
+use Unzer\UnzerPayment\Service\ExpressCheckoutService;
+use Unzer\UnzerPayment\Service\PaymentService;
+use Unzer\UnzerPayment\Service\RedirectSessionService;
 use Unzer\UnzerPayment\Traits\ServiceContainer;
+use UnzerSDK\Resources\TransactionTypes\Authorization;
+use UnzerSDK\Resources\TransactionTypes\Charge;
 
 
 class PaymentGateway extends PaymentGateway_parent
 {
     use ServiceContainer;
 
+    public const SESSION_REDIRECT_REQUIRED = RedirectSessionService::SESSION_REQUIRED;
+    public const SESSION_REDIRECT_URL = RedirectSessionService::SESSION_URL;
+    public const SESSION_REDIRECT_ORDER_ID = RedirectSessionService::SESSION_ORDER_ID;
+    public const SESSION_REDIRECT_PAYMENT_ID = RedirectSessionService::SESSION_PAYMENT_ID;
+
     /**
      * @param $dAmount
      * @param $oOrder
-     * @return true
+     * @return bool
      */
     public function executePayment($dAmount, &$oOrder)
     {
+        $logger = $this->getServiceFromContainer(DebugHandler::class);
+        $this->clearRedirectSession();
         if (!UnzerpaymentHelper::getInstance()->isUnzerPaymentMethod($oOrder->oxorder__oxpaymenttype->value)) {
             return parent::executePayment($dAmount, $oOrder);
         }
+
+        $session = Registry::getSession();
+        if ($session->getVariable(ExpressCheckoutService::SESSION_PAYPAL_PAYMENT_ID)) {
+            try {
+                $transaction = $this->payPaypalExpress(
+                    $session->getVariable(ExpressCheckoutService::SESSION_PAYPAL_PAYMENT_ID),
+                    $oOrder
+                );
+            } catch (\Throwable $e) {
+                $logger->addLog('PaymentGateway::executePayment()', 3, false, ['Paypal Express', $e->getMessage()]);
+                $this->_sLastError = $e->getClientMessage();
+                ThankYouController::resetExpressCheckoutSessionData();
+                return false;
+            }
+        } elseif ($session->getVariable(ExpressCheckoutService::SESSION_GOOGLE_PAYMENT_TYPE_ID)) {
+            try {
+                $googlePayId = $session->getVariable(ExpressCheckoutService::SESSION_GOOGLE_PAYMENT_TYPE_ID);
+                $transaction =  $this->payGoogleExpress(
+                    $googlePayId,
+                    $oOrder
+                );
+            } catch (\Throwable $e) {
+                $logger->addLog('PaymentGateway::executePayment()', 3, false, ['Google Pay Express', $e->getMessage()]);
+                $this->_sLastError = $e->getClientMessage();
+                ThankYouController::resetExpressCheckoutSessionData();
+                return false;
+            }
+        } elseif ($session->getVariable(ExpressCheckoutService::SESSION_APPLEPAY_PAYMENT_TYPE_ID)) {
+            try {
+                $applePayId = $session->getVariable(ExpressCheckoutService::SESSION_APPLEPAY_PAYMENT_TYPE_ID);
+                $transaction = $this->payApplePayExpress(
+                    $applePayId,
+                    $oOrder
+                );
+            } catch (\Throwable $e) {
+                $logger->addLog('PaymentGateway::executePayment()', 3, false, ['Apple Pay Express', $e->getMessage()]);
+                $this->_sLastError = $e->getClientMessage();
+                ThankYouController::resetExpressCheckoutSessionData();
+                return false;
+            }
+        }
+        if (isset($transaction)) {
+            return true;
+        }
+
         $this->handleUnzerPayment($oOrder, $dAmount);
         $this->resetSession();
         return true;
+    }
+
+    private function beforeRedirect($transaction, $oOrder)
+    {
+        $oOrder->oxorder__oxtransid = new Field($transaction->getPayment()->getId(), Field::T_RAW);
+        if (Registry::getSession()->getVariable(ExpressCheckoutService::SESSION_SELECTED_EXPRESS_METHOD)) {
+            $oOrder->oxorder__oxunzerpayordernr = new Field((string) $oOrder->getId(), Field::T_RAW);
+            $oOrder->oxorder__oxunzerexpressmethod =  new Field(
+                1,
+                Field::T_RAW
+            );
+        }
+        $oOrder->save();
+        $this->resetSession();
+    }
+
+    private function clearRedirectSession(): void
+    {
+        (new RedirectSessionService())->clear();
     }
 
     /**
@@ -98,11 +184,124 @@ class PaymentGateway extends PaymentGateway_parent
     }
 
     /**
+     * @param $unzer_payment_id
+     * @param Order $order
+     * @throws \UnzerSDK\Exceptions\UnzerApiException
+     */
+    protected function payPaypalExpress($unzer_payment_id, $order)
+    {
+        $logger = $this->getServiceFromContainer(DebugHandler::class);
+        $order_id = $order->getId();
+
+        $payment = UnzerpaymentClient::getInstance()->fetchPayment($unzer_payment_id);
+        $basket = ( new BasketService())->getBasket(Registry::getSession()->getVariable('expressBasket'), $order_id);
+        $basket->setId($payment->getBasket()->getId());
+        $basket->setOrderId($order->getId());
+        UnzerpaymentClient::getInstance()->updateBasket($basket);
+
+        ( new CustomerService() )->updatePaypalExpressCustomer( $order,  $payment->getCustomer() );
+
+        $moduleSettingService = ContainerFacade::get(ModuleSettingServiceInterface::class);
+        $bookingMode = (new UnzerpaymentHelper())->getPaymentMethodChargeMode(UnzerPaypalPaymentMethod::class);
+        if ($bookingMode == '') {
+            $bookingMode = $moduleSettingService->getString('UnzerPaymentMode', Constants::MODULE_ID) == '0' ?
+                'authorize' : 'charge';
+        }
+
+        if (empty($payment->getCharges()) || $bookingMode === 'authorize') {
+            $authorization = new Authorization(
+                $basket->getTotalValueGross(),
+                $basket->getCurrencyCode()
+            );
+            $authorization->setOrderId($order_id);
+            $logger->addLog('Trying Update Authorization', 1, false, [$authorization]);
+            $transaction = UnzerpaymentClient::getInstance()->updateAuthorization($payment->getId(), $authorization);
+        } else {
+            $charge = new Charge(
+                $basket->getTotalValueGross(),
+                $basket->getCurrencyCode()
+            );
+            $charge->setOrderId($order_id);
+            $logger->addLog('Trying Update Charge', 1, false, [$payment->getId(), $charge]);
+            $transaction = UnzerpaymentClient::getInstance()->updateCharge($payment->getId(), $charge);
+        }
+        $this->beforeRedirect($transaction, $order);
+        $session = Registry::getSession();
+        $session->setVariable(
+            ExpressCheckoutService::SESSION_PAYMENT_ID,
+            $transaction->getPaymentId()
+        );
+        $this->storeRedirectState($transaction, $order);
+        return $transaction;
+    }
+
+    protected function payApplePayExpress($unzer_payment_id, $order)
+    {
+        return $this->genericPayExpress(
+            UnzerApplepayPaymentMethod::class,
+            $unzer_payment_id,
+            $order
+        );
+    }
+
+    protected function payGoogleExpress($unzer_payment_id, $order)
+    {
+        return $this->genericPayExpress(
+            UnzerGooglepayPaymentMethod::class,
+            $unzer_payment_id,
+            $order
+        );
+    }
+
+    protected function genericPayExpress($paymentMethodClass, $unzer_payment_id, $order)
+    {
+        $moduleSettingService = ContainerFacade::get(ModuleSettingServiceInterface::class);
+        $bookingMode = (new UnzerpaymentHelper())->getPaymentMethodChargeMode($paymentMethodClass);
+        if ($bookingMode == '') {
+            $bookingMode = $moduleSettingService->getString('UnzerPaymentMode', Constants::MODULE_ID) == '0' ?
+                'authorize' : 'charge';
+        }
+
+        if ( $bookingMode == 'authorize' ) {
+            $transaction = ( new PaymentService() )->performAuthorizationForOrder( $order, $this, $unzer_payment_id );
+        } else {
+            $transaction = ( new PaymentService() )->performChargeForOrder( $order, $this, $unzer_payment_id );
+        }
+        $logger = $this->getServiceFromContainer(DebugHandler::class);
+        $logger->addLog('Transaction', 3,false, [$paymentMethodClass, $bookingMode, $unzer_payment_id, $transaction]);
+
+        $this->beforeRedirect($transaction, $order);
+        $session = Registry::getSession();
+        $session->setVariable(
+            ExpressCheckoutService::SESSION_PAYMENT_ID,
+            $transaction->getPaymentId()
+        );
+        $this->storeRedirectState($transaction, $order);
+
+        return $transaction;
+    }
+
+    private function storeRedirectState($transaction, $order): void
+    {
+        $redirectUrl = $transaction->getPayment()->getRedirectUrl();
+        if (!$redirectUrl) {
+            return;
+        }
+
+        (new RedirectSessionService())->store(
+            $redirectUrl,
+            (string) $order->getId(),
+            (string) $transaction->getPaymentId()
+        );
+    }
+
+    /**
      * @return void
      */
     public function resetSession()
     {
         $session = Registry::getSession();
+        $session->deleteVariable('expressBasket');
         $session->deleteVariable('UnzerSelectedPaymentMethod');
     }
 

@@ -35,5 +35,8 @@ $aLang = [
     'UNZER_BIC' => 'BIC',
     'UNZER_PLEASE_USE_DESCRIPTOR' => 'Bitte nutzen Sie diese Identifikationsnummer als Verwendungszweck',
 
+    'CANCEL_EXPRESS_CO' => 'Express Checkout abbrechen',
+    'UNZER_GENERIC_ERROR' => 'Es ist ein Fehler aufgetreten.',
+
 
 ];

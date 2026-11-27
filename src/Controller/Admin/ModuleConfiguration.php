@@ -9,6 +9,7 @@ use OxidEsales\EshopCommunity\Core\DatabaseProvider;
 use Unzer\UnzerPayment\Classes\UnzerpaymentClient;
 use Unzer\UnzerPayment\Classes\UnzerpaymentHelper;
 use Unzer\UnzerPayment\Constants\Constants;
+use Unzer\UnzerPayment\PaymentMethods\UnzerGooglepayPaymentMethod;
 
 class ModuleConfiguration extends ModuleConfiguration_parent
 {
@@ -106,6 +107,8 @@ class ModuleConfiguration extends ModuleConfiguration_parent
             $sPaymenthodIds = "'" . implode("','", $available_payment_methods_strings) . "'";
             $sQ = "update oxpayments set oxactive = 1 where oxid in ($sPaymenthodIds)";
             DatabaseProvider::getDB()->Execute($sQ);
+
+            (new UnzerGooglepayPaymentMethod())->fetchAndSaveChannelId();
         }
 
         $this->addTplParam('unzer_success_message', 'Settings successfully updated');

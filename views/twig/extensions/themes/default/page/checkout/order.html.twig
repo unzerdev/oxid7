@@ -5,7 +5,7 @@
 
     {% set payment = oView.getPayment() %}
 
-    {% if payment.isUnzerPaymentMethod() %}
+    {% if payment.isUnzerPaymentMethod() and not oViewConf.isExpressCheckout() %}
         {% include sModuleId ~ '/payment/unzer_assets.html.twig' %}
 
         <button type="button" class="btn btn-highlight btn-lg w-100" id="unzer-checkout-btn">
@@ -18,3 +18,20 @@
 
 {% endblock %}
 
+{% block checkout_order_payment_method_desc %}
+    {% set payment = oView.getPayment() %}
+    {% set unzerExpressTitle = oViewConf.getUnzerExpressPaymentTitle(payment.getId()) %}
+
+    {% if unzerExpressTitle %}
+        {{ unzerExpressTitle }}
+    {% else %}
+        {{ parent() }}
+    {% endif %}
+{% endblock %}
+
+{% block checkout_order_address %}
+    {% if oxcmp_user %}
+        {% set oxcmp_user = oViewConf.getUnzerCheckoutAddressUser(oxcmp_user) %}
+    {% endif %}
+    {{ parent() }}
+{% endblock %}

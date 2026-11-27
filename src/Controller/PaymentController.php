@@ -6,9 +6,11 @@ namespace Unzer\UnzerPayment\Controller;
 
 use OxidEsales\Eshop\Application\Model\Country;
 use OxidEsales\Eshop\Core\Registry;
+use OxidEsales\EshopCommunity\Application\Model\Payment;
 use Unzer\UnzerPayment\Classes\UnzerpaymentClient;
 use Unzer\UnzerPayment\Classes\UnzerpaymentHelper;
 use Unzer\UnzerPayment\Service\DebugHandler;
+use Unzer\UnzerPayment\Service\ExpressCheckoutService;
 use Unzer\UnzerPayment\Traits\ServiceContainer;
 
 /**
@@ -19,6 +21,36 @@ use Unzer\UnzerPayment\Traits\ServiceContainer;
 class PaymentController extends PaymentController_parent
 {
     use ServiceContainer;
+
+    public function render()
+    {
+        $session = Registry::getSession();
+        $row = (new \Unzer\UnzerPayment\Service\PreOrderService())->find('oxid', (string) $session->getVariable('sess_challenge'));
+        if ($row) {
+            $session->deleteVariable('sess_challenge');
+            $session->deleteVariable('UnzerPaypageId');
+        }
+
+        if (Registry::getRequest()->getRequestEscapedParameter('resetExpressCheckout') === 'true') {
+            $session->deleteVariable('UnzerPaypageId');
+            $session->deleteVariable('UnzerMetadataId');
+            $session->deleteVariable('UnzerPreparedOrderId');
+            ThankYouController::resetExpressCheckoutSessionData();
+        }
+
+        $expressMethod = $session->getVariable(
+            ExpressCheckoutService::SESSION_SELECTED_EXPRESS_METHOD
+        );
+        if ($expressMethod) {
+            $this->addTplParam('reset_express', html_entity_decode(
+                Registry::getConfig()->getShopSecureHomeUrl(),
+                ENT_QUOTES | ENT_HTML5
+                 ) . 'cl=payment'
+                   . '&resetExpressCheckout=true');
+        }
+
+        return parent::render();
+    }
 
     /**
      * Template variable getter. Returns paymentlist
@@ -44,8 +76,24 @@ class PaymentController extends PaymentController_parent
             $paymentListRaw = $paymentList;
             $paymentList = [];
 
+            $session = Registry::getSession();
+            $expressMethod = $session->getVariable(
+                ExpressCheckoutService::SESSION_SELECTED_EXPRESS_METHOD
+            );
+            if ($expressMethod) {
+                /**
+                 * @var Payment $payment
+                 */
+                foreach ($paymentListRaw as $key => $payment) {
+                    if ($payment->getId() == $expressMethod) {
+                        $paymentList[$key] = $payment;
+                    }
+                }
+                $paymentListRaw = $paymentList;
+            }
+
             /**
-             * @var \Unzer\UnzerPayment\Model\Payment $payment
+             * @var Payment $payment
              */
             foreach ($paymentListRaw as $key => $payment) {
                 if (!is_object($payment)) {

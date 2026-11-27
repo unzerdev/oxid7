@@ -1,5 +1,10 @@
 # Release Notes for Unzer Payment Plugin for OXID eShop 7
 
+## [1.2.0]
+- Express Checkout for PayPal, Google Pay and Apple Pay on the Cart Page
+- Backend Setting to Allow or Block Saved Payment Details for Registered Customers
+- Fix: Order Creation When Customers Leave Before Returning to the Shop
+
 ## [1.1.7]
 
 - Updated Order Status Logic for Direct Bank Transfer

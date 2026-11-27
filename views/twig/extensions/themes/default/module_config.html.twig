@@ -91,23 +91,25 @@
                     </thead>
                     <tbody>
                         {% for webhook in unzer_webhooks %}
-                            {% set counter = ( counter | default(0) ) + 1 %}
-                            {% set zebra = cycle(["listitem", "listitem2"], counter) %}
-                            <tr>
-                                <td class="{{ zebra }}">
-                                    {{ webhook.getId() }}
-                                </td>
-                                <td class="{{ zebra }}">
-                                    {{ webhook.getEvent() }}
-                                </td>
-                                <td class="{{ zebra }}">
-                                    {{ webhook.getUrl() }}
-                                </td>
-                                <td class="{{ zebra }}">
-                                    <a href="{{ oViewConf.getSelfLink()|raw }}&oxid={{ oModule.getInfo('id') }}&editval[oxshops__oxid]={{ oxid }}&cl=module_config&fnc=deletewebhook&webhookId={{ webhook.getId() }}" onclick="return confirm('{{ translate({ ident: "UNZER_WEBHOOK_DELETE_CONFIRM" }) }}')" class="delete">
-                                    </a>
-                                </td>
-                            </tr>
+                            {% if webhook %}
+                                {% set counter = ( counter | default(0) ) + 1 %}
+                                {% set zebra = cycle(["listitem", "listitem2"], counter) %}
+                                <tr>
+                                    <td class="{{ zebra }}">
+                                        {{ webhook.getId() }}
+                                    </td>
+                                    <td class="{{ zebra }}">
+                                        {{ webhook.getEvent() }}
+                                    </td>
+                                    <td class="{{ zebra }}">
+                                        {{ webhook.getUrl() }}
+                                    </td>
+                                    <td class="{{ zebra }}">
+                                        <a href="{{ oViewConf.getSelfLink()|raw }}&oxid={{ oModule.getInfo('id') }}&editval[oxshops__oxid]={{ oxid }}&cl=module_config&fnc=deletewebhook&webhookId={{ webhook.getId() }}" onclick="return confirm('{{ translate({ ident: "UNZER_WEBHOOK_DELETE_CONFIRM" }) }}')" class="delete">
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>

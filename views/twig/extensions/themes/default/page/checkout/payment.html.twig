@@ -1,0 +1,10 @@
+{% extends "page/checkout/payment.html.twig" %}
+
+{% block change_payment %}
+
+    {% if reset_express is defined %}
+        <a href="{{ reset_express }}" class="btn btn-highlight btn-lg w-100">{{ translate({ ident: "CANCEL_EXPRESS_CO" }) }}</a>
+    {% endif %}
+
+    {{ parent() }}
+{% endblock %}

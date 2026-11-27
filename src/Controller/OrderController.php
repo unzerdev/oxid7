@@ -9,9 +9,13 @@ use OxidEsales\EshopCommunity\Core\Di\ContainerFacade;
 use OxidEsales\Eshop\Core\ShopVersion;
 use OxidEsales\EshopCommunity\Internal\Framework\Module\Facade\ModuleSettingServiceInterface;
 use OxidEsales\Facts\Facts;
+use Unzer\UnzerPayment\Model\Order as UnzerOrder;
+use Unzer\UnzerPayment\Service\ExpressCheckoutService;
+use Unzer\UnzerPayment\Service\MetadataService;
 use Unzer\UnzerPayment\Classes\UnzerpaymentClient;
 use Unzer\UnzerPayment\Classes\UnzerpaymentHelper;
 use Unzer\UnzerPayment\Constants\Constants;
+use Unzer\UnzerPayment\Service\BasketService;
 use UnzerSDK\Constants\CompanyCommercialSectorItems;
 use UnzerSDK\Constants\CompanyRegistrationTypes;
 use UnzerSDK\Constants\PaypageCheckoutTypes;
@@ -20,6 +24,8 @@ use OxidEsales\Eshop\Application\Model\Country;
 use Unzer\UnzerPayment\Service\DebugHandler;
 use Unzer\UnzerPayment\Traits\ServiceContainer;
 use Unzer\UnzerPayment\Traits\UnzerRedirect;
+use Unzer\UnzerPayment\Model\PaymentGateway;
+use Unzer\UnzerPayment\Service\RedirectSessionService;
 
 /**
  * @inheritDoc
@@ -32,6 +38,67 @@ class OrderController extends OrderController_parent
     use ServiceContainer;
 
     private $validUnzerPayment = false;
+    private $preOrder = null;
+
+    public function execute()
+    {
+        $row = (new \Unzer\UnzerPayment\Service\PreOrderService())->find('oxid', (string) Registry::getSession()->getVariable('sess_challenge'));
+        if ($row) {
+            return $this->unzerReturnPrepared($row);
+        }
+        if ($this->validUnzerPayment && \Unzer\UnzerPayment\Service\PreOrderService::enabled()) {
+            return $this->unzerPrepareOrder();
+        }
+        $session = Registry::getSession();
+        $session->setVariable('expressBasket', $session->getBasket());
+        return parent::execute();
+    }
+
+    /** Validate server-side consent before creating a payable resource. */
+    public function unzerPrepareOrder()
+    {
+        if (!\Unzer\UnzerPayment\Service\PreOrderService::enabled()
+            || !$this->validUnzerPayment || ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST'
+            || !Registry::getSession()->checkSessionChallenge()) {
+            return;
+        }
+        if (!$this->validateTermsAndConditions()) {
+            $this->_blConfirmAGBError = 1;
+            return;
+        }
+        try {
+            $service = new \Unzer\UnzerPayment\Service\PreOrderService();
+            $this->preOrder = $service->prepare($this->getBasket(), $this->getUser());
+            if ($this->preOrder['state'] === 'finalized') {
+                return $this->unzerReturnPrepared($this->preOrder);
+            }
+            $this->requestUnzerPayPage();
+            $this->addTplParam('unzerOpenPreparedPage', true);
+        } catch (\Throwable $e) {
+            Registry::getLogger()->error('Unzer preliminary checkout failed', ['exception' => $e]);
+            Registry::getUtilsView()->addErrorToDisplay($e);
+        }
+    }
+
+    private function unzerReturnPrepared(array $row)
+    {
+        if (!$this->getUser() || $row['userid'] !== $this->getUser()->getId()) {
+            $this->errorRedirect();
+            return;
+        }
+        $id = (new \Unzer\UnzerPayment\Service\PreOrderService())->fromPaypage($row['oxid']);
+        if (!$id) {
+            $this->errorRedirect();
+            return;
+        }
+        $session = Registry::getSession();
+        $session->setVariable('sess_challenge', $id);
+        $session->getBasket()->setOrderId($id);
+        $session->deleteVariable('ordrem');
+        $session->deleteVariable('UnzerSelectedPaymentMethod');
+        return 'thankyou';
+    }
+
     private DebugHandler $logger;
 
     /**
@@ -41,15 +108,73 @@ class OrderController extends OrderController_parent
     {
         parent::init();
 
+        $session = Registry::getSession();
+        $expressMethod = $session->getVariable(
+            ExpressCheckoutService::SESSION_SELECTED_EXPRESS_METHOD
+        );
+        if ($expressMethod) {
+            $paymentId = $session->getVariable('paymentid');
+            $basket = $session->getBasket();
+            if (
+                $basket
+                && $paymentId
+                && $basket->getPaymentId() !== $paymentId
+            ) {
+                Registry::getLogger()->warning(
+                    'Correcting stale basket payment for Unzer Express',
+                    [
+                        'basket' => $basket->getPaymentId(),
+                        'session' => $paymentId,
+                    ]
+                );
+                $basket->setPayment($paymentId);
+            }
+        }
+
         $this->logger = $this->getServiceFromContainer(DebugHandler::class);
 
         if (UnzerpaymentClient::getInstance()) {
-            if ($payment = $this->getPayment()) {
-                if ($payment->isUnzerPaymentMethod()) {
-                    $this->validUnzerPayment = true;
+            if (empty($session->getVariable(ExpressCheckoutService::SESSION_SELECTED_EXPRESS_METHOD))) {
+                if ($payment = $this->getPayment()) {
+                    if ($payment->isUnzerPaymentMethod()) {
+                        $this->validUnzerPayment = true;
+                    }
                 }
             }
         }
+    }
+
+    protected function getNextStep($success)
+    {
+        if (
+            $success === UnzerOrder::ORDER_STATE_UNZER_REDIRECT
+        ) {
+            $session = Registry::getSession();
+
+            $redirectUrl = (new RedirectSessionService())->getUrl();
+
+            if (!$redirectUrl) {
+                Registry::getLogger()->error(
+                    'Unzer redirect required but redirect URL is missing.'
+                );
+
+                return 'payment?payerror=2';
+            }
+
+            (new RedirectSessionService())->consumeUrl();
+
+            Registry::getUtils()->redirect(
+                $redirectUrl,
+                false,
+                302
+            );
+
+            exit;
+        }
+
+        return parent::getNextStep(
+            $success
+        );
     }
 
     /**
@@ -59,6 +184,10 @@ class OrderController extends OrderController_parent
     {
         $session = Registry::getSession();
         $UnzerPaypageId = $session->getVariable('UnzerPaypageId');
+        $row = (new \Unzer\UnzerPayment\Service\PreOrderService())->find('paypageid', (string) $UnzerPaypageId);
+        if ($row) {
+            return $this->unzerReturnPrepared($row);
+        }
         $UnzerSelectedPaymentMethod = $session->getVariable('UnzerSelectedPaymentMethod');
         if (!$UnzerPaypageId || !$UnzerSelectedPaymentMethod) {
             $this->errorRedirect();
@@ -89,7 +218,9 @@ class OrderController extends OrderController_parent
      */
     public function render()
     {
-        if ($this->validUnzerPayment) {
+        $preCreate = \Unzer\UnzerPayment\Service\PreOrderService::enabled();
+        $this->addTplParam('unzerPreCreateOrder', $preCreate);
+        if ($this->validUnzerPayment && !$preCreate) {
             $this->requestUnzerPayPage();
         }
         Registry::getSession()->deleteVariable('additionalUnzerPaymentInformation');
@@ -227,95 +358,18 @@ class OrderController extends OrderController_parent
             UnzerpaymentClient::getInstance()->createCustomer($unzerCustomer);
         }
 
-        $orderId = Constants::ORDER_ID_PREFIX . uniqid();
+        $orderId = $this->preOrder['reference'] ?? Constants::ORDER_ID_PREFIX . uniqid();
 
         $oBasket = $this->getBasket();
-
-        $totalValueGross = $oBasket->getBruttoSum() - $oBasket->getTotalDiscountSum() + $oBasket->getDeliveryCost()->getBruttoPrice();
-
-        $basket = (new \UnzerSDK\Resources\Basket())
-            ->setTotalValueGross($totalValueGross)
-            ->setCurrencyCode($oBasket->getBasketCurrency()->name)
-            ->setOrderId($orderId)
-            ->setNote('');
-
-        $basketItems = [];
-        $tmpSum = 0;
-        foreach ($oBasket->getContents() as $product) {
-            $tmpSum += UnzerpaymentHelper::getInstance()->prepareAmountValue($product->getPrice()->getBruttoPrice()) * $product->getAmount();
-            $basketItemReferenceId = 'Item-' . $product->getProductId();
-            $basketItem = (new \UnzerSDK\Resources\EmbeddedResources\BasketItem())
-                ->setBasketItemReferenceId($basketItemReferenceId)
-                ->setQuantity((int)$product->getAmount())
-                ->setUnit('m')
-                ->setAmountPerUnitGross(UnzerpaymentHelper::getInstance()->prepareAmountValue($product->getPrice()->getBruttoPrice()))
-                ->setVat((float)$product->getVatPercent())
-                ->setTitle($product->getTitle())
-                ->setType(\UnzerSDK\Constants\BasketItemTypes::GOODS);
-
-            $basketItems[] = $basketItem;
-        }
-
-        if ($oBasket->getDeliveryCosts()) {
-            $tmpSum += $oBasket->getDeliveryCost()->getBruttoPrice();
-            $basketItem = (new \UnzerSDK\Resources\EmbeddedResources\BasketItem())
-                ->setBasketItemReferenceId('Shipping')
-                ->setQuantity(1)
-                ->setAmountPerUnitGross(UnzerpaymentHelper::getInstance()->prepareAmountValue($oBasket->getDeliveryCost()->getBruttoPrice()))
-                ->setTitle('Shipping')
-                ->setType(\UnzerSDK\Constants\BasketItemTypes::SHIPMENT);
-            $basketItems[] = $basketItem;
-        }
-
-        $discountsAmount = $oBasket->getTotalDiscountSum();
-        if ($discountsAmount > 0) {
-            $tmpSum -= $discountsAmount;
-            $basketItem = (new \UnzerSDK\Resources\EmbeddedResources\BasketItem())
-                ->setBasketItemReferenceId('Voucher')
-                ->setQuantity(1)
-                ->setAmountDiscountPerUnitGross(UnzerpaymentHelper::getInstance()->prepareAmountValue($discountsAmount))
-                ->setTitle('Voucher Delta')
-                ->setType(\UnzerSDK\Constants\BasketItemTypes::VOUCHER);
-            $basketItems[] = $basketItem;
-        }
-
-        $difference = ((float)$totalValueGross*100 - (float)$tmpSum*100)/100;                
-        if ($difference > 0 && UnzerpaymentHelper::getInstance()->prepareAmountValue($difference) > 0) {
-            $basketItem = (new \UnzerSDK\Resources\EmbeddedResources\BasketItem())
-                ->setBasketItemReferenceId('add-shipping-delta')
-                ->setQuantity(1)
-                ->setAmountPerUnitGross(UnzerpaymentHelper::getInstance()->prepareAmountValue($difference))
-                ->setTitle('Shipping')
-                ->setSubTitle('Shipping Delta')
-                ->setType(\UnzerSDK\Constants\BasketItemTypes::SHIPMENT);
-            $basketItems[] = $basketItem;
-        } elseif ($difference < 0 && UnzerpaymentHelper::getInstance()->prepareAmountValue($difference) < 0) {
-            $basketItem = (new \UnzerSDK\Resources\EmbeddedResources\BasketItem())
-                ->setBasketItemReferenceId('VoucherDelta')
-                ->setQuantity(1)
-                ->setAmountDiscountPerUnitGross(UnzerpaymentHelper::getInstance()->prepareAmountValue($difference) * -1)
-                ->setTitle('Voucher Delta')
-                ->setType(\UnzerSDK\Constants\BasketItemTypes::VOUCHER);
-            $basketItems[] = $basketItem;
-        }
-
-        foreach ($basketItems as $basketItem) {
-            $basket->addBasketItem(
-                $basketItem
-            );
-        }
+        $basket = ( new BasketService())->getBasket($oBasket, $orderId, $this->preOrder ? $oBasket->getPrice()->getBruttoPrice() : null);
         
         UnzerpaymentClient::getInstance()->createBasket($basket);
 
-        $oModule = oxNew('oxModule');
-        $oModule->load(Constants::MODULE_ID);
+        $metadata = (new MetadataService())->getMetadata(0);
 
-        $metadata = new \UnzerSDK\Resources\Metadata();
-        $metadata->setShopType('Oxid eShop ' . (new Facts())->getEdition());
-        $metadata->setShopVersion(ShopVersion::getVersion());
-        $metadata->addMetadata('pluginType', 'unzerdev/oxid7');
-        $metadata->addMetadata('pluginVersion', $oModule->getInfo('version'));
-
+        if ($this->preOrder) {
+            $metadata->addMetadata('shopOrderId', $this->preOrder['oxid']);
+        }
         UnzerpaymentClient::getInstance()->createMetadata($metadata);
 
         $resources = new \UnzerSDK\Resources\EmbeddedResources\Paypage\Resources(
@@ -335,14 +389,18 @@ class OrderController extends OrderController_parent
                 $currentMethodConfig
             );
 
-        if ($oUser->hasAccount() && in_array($paymentMethodClass, ['card', 'paypal'])) {
-            $currentMethodConfig->setCredentialOnFile(true);
-            $paymentMethodsConfig->addMethodConfig(
-                $paymentMethodClass,
-                $currentMethodConfig
-            );
-        } elseif (!$oUser->hasAccount() && in_array($paymentMethodClass, ['card', 'paypal'])) {
-            $currentMethodConfig->setCredentialOnFile(false);
+        if (in_array($paymentMethodClass, ['card', 'paypal', 'sepaDirectDebit'])) {
+            $showCOF = false;
+            if ($oUser->hasAccount()) {
+                if ($paymentMethodClass == 'card') {
+                    $showCOF = $moduleSettingService->getBoolean('UnzerPaymentCOFCreditCard', Constants::MODULE_ID);
+                } elseif ($paymentMethodClass == 'paypal') {
+                    $showCOF = $moduleSettingService->getBoolean('UnzerPaymentCOFPaypal', Constants::MODULE_ID);
+                } elseif ($paymentMethodClass == 'sepaDirectDebit') {
+                    $showCOF = $moduleSettingService->getBoolean('UnzerPaymentCOFDirectDebit', Constants::MODULE_ID);
+                }
+            }
+            $currentMethodConfig->setCredentialOnFile($showCOF);
             $paymentMethodsConfig->addMethodConfig(
                 $paymentMethodClass,
                 $currentMethodConfig
@@ -389,7 +447,7 @@ class OrderController extends OrderController_parent
             }
         }
 
-        $paypage = new \UnzerSDK\Resources\V2\Paypage($totalValueGross, $oBasket->getBasketCurrency()->name);
+        $paypage = new \UnzerSDK\Resources\V2\Paypage($basket->getTotalValueGross(), $oBasket->getBasketCurrency()->name);
         $paypage->setPaymentMethodsConfigs($paymentMethodsConfig);
         $paypage->setResources($resources);
         $paypage->setType("embedded");
@@ -414,8 +472,18 @@ class OrderController extends OrderController_parent
         );
 
         try {
-            UnzerpaymentClient::getInstance()->createPaypage($paypage);
+            if ($this->preOrder && $this->preOrder['paypageid']) {
+                $paypage = UnzerpaymentClient::getInstance()->fetchPaypageV2($this->preOrder['paypageid']);
+            } else {
+                UnzerpaymentClient::getInstance()->createPaypage($paypage);
+                if ($this->preOrder) {
+                    (new \Unzer\UnzerPayment\Service\PreOrderService())->attach($this->preOrder['oxid'], (string) $paypage->getId());
+                }
+            }
         } catch (\Exception $exception) {
+            if ($this->preOrder) {
+                throw $exception;
+            }
             $this->logger->addLog('createPaypage Error', 1, $exception, [
                 'paypage' => $paypage,
                 'unzerCustomer' => $unzerCustomer,
